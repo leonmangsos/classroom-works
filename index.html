@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腾讯未来教室作品展示平台</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="data.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            height: 60px;
+            margin-right: 20px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .upload-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #fileInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            background: #f8f9ff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #fileInput:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .works-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        .work-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .work-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .work-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        .work-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+        .work-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .meta-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 15px;
+        }
+        .work-body {
+            padding: 20px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        .info-value {
+            color: #333;
+            flex: 1;
+            word-break: break-word;
+        }
+        .info-value.content {
+            max-height: 120px;
+            overflow-y: auto;
+            padding-right: 8px;
+            line-height: 1.5;
+        }
+        .info-value.content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .info-value.content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .info-value.content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        .info-value.content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        .info-value .location {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .work-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+        .stat-item .number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-item .label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 3px;
+        }
+        .media-section {
+            margin-top: 15px;
+        }
+        .media-title {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .images-grid img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .images-grid img:hover {
+            transform: scale(1.05);
+        }
+        .image-placeholder {
+            width: 100%;
+            height: 100px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .image-placeholder:hover {
+            background: #e0e0e0;
+        }
+        .image-placeholder .loading-icon {
+            color: #999;
+            font-size: 24px;
+        }
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .lazy-image.loaded {
+            opacity: 1;
+        }
+        .video-container {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .video-container video {
+            width: 100%;
+            height: auto;
+        }
+        .video-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .video-placeholder:hover {
+            background: #e0e0e0;
+        }
+        .video-placeholder .play-icon {
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            color: white;
+            font-size: 24px;
+        }
+        .video-placeholder .play-text {
+            color: #666;
+            font-size: 14px;
+        }
+        .no-media {
+            color: #999;
+            font-style: italic;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            border-color: #667eea;
+        }
+
+            /* 移动端适配 */
+            @media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
+                
+                .header {
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                
+                .logo {
+                    height: 50px;
+                    margin-right: 0;
+                    margin-bottom: 10px;
+                }
+                
+                h1 {
+                    font-size: 1.8rem;
+                    margin-bottom: 0;
+                    text-align: center;
+                }
+            
+            .upload-section {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 1.5rem;
+            }
+            
+            .works-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .work-card {
+                margin: 0;
+            }
+            
+            .work-header {
+                padding: 15px;
+            }
+            
+            .work-title {
+                font-size: 1.2rem;
+            }
+            
+            .work-body {
+                padding: 15px;
+            }
+            
+            .work-meta {
+                gap: 8px;
+            }
+            
+            .meta-tag {
+                font-size: 0.8rem;
+                padding: 3px 8px;
+            }
+            
+            .work-stats {
+                gap: 8px;
+            }
+            
+            .stat-item {
+                padding: 8px;
+            }
+            
+            .stat-item .number {
+                font-size: 1.1rem;
+            }
+            
+            .images-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            
+            .images-grid img {
+                height: 80px;
+            }
+            
+            .image-placeholder {
+                height: 80px;
+            }
+            
+            .image-placeholder .loading-icon {
+                font-size: 20px;
+            }
+            
+            .filter-section > div {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .filter-section select {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .filter-section label {
+                font-size: 14px;
+            }
+        }
+        
+            @media (max-width: 480px) {
+                body {
+                    padding: 8px;
+                }
+                
+                .header {
+                    margin-bottom: 15px;
+                }
+                
+                .logo {
+                    height: 40px;
+                }
+                
+                h1 {
+                    font-size: 1.5rem;
+                    margin-bottom: 0;
+                }
+            
+            .upload-section {
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .work-header {
+                padding: 12px;
+            }
+            
+            .work-body {
+                padding: 12px;
+            }
+            
+            .work-title {
+                font-size: 1.1rem;
+            }
+            
+            .images-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .search-box input {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .info-value.content {
+                max-height: 100px;
+                font-size: 14px;
+            }
+            
+            .video-placeholder {
+                height: 150px;
+            }
+            
+            .video-placeholder .play-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>腾讯未来教室作品展示平台</h1>
+        </div>
+        
+        <div class="upload-section">
+            <h2>作品数据</h2>
+            <p style="color: #666; margin-bottom: 15px;">✅ 网页会自动加载Excel文件中的作品数据，您也可以上传新的Excel文件来替换数据</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" placeholder="选择Excel文件（可选）">
+        </div>
+
+        <div id="stats" class="stats" style="display:none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalWorks">0</div>
+                <div class="stat-label">作品总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalViews">0</div>
+                <div class="stat-label">总浏览量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalLikes">0</div>
+                <div class="stat-label">总点赞数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalComments">0</div>
+                <div class="stat-label">总评论数</div>
+            </div>
+        </div>
+
+        <div class="search-box" id="searchBox" style="display:none;">
+            <input type="text" id="searchInput" placeholder="搜索作品名称、作者、学校、内容...">
+        </div>
+        <div class="filter-section" id="filterSection" style="display:none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                <div>
+                    <label for="tagFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按标签筛选:</label>
+                    <select id="tagFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
+                        <option value="">全部标签</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="themeFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按主题筛选:</label>
+                    <select id="themeFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
+                        <option value="">全部主题</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="aiFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按AI结合筛选:</label>
+                    <select id="aiFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
+                        <option value="">全部</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="locationFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按IP地点筛选:</label>
+                    <select id="locationFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
+                        <option value="">全部地点</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="works-grid" id="worksGrid"></div>
+    </div>
+
+    <div class="modal" id="imageModal">
+        <span class="close-btn">&times;</span>
+        <img id="modalImage" src="" alt="">
+    </div>
+
+    <script>
+        let allWorks = [];
+        let displayedWorks = [];
+
+        // 页面加载时自动读取Excel文件
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExcelFile();
+        });
+
+        // 自动加载Excel文件
+        async function loadExcelFile() {
+            try {
+                const response = await fetch('历史作品_IP地址补充主题AI数据.xlsx');
+                if (!response.ok) {
+                    throw new Error('无法加载Excel文件');
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                processData(jsonData);
+            } catch (error) {
+                console.error('加载Excel文件失败:', error);
+                document.getElementById('worksGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
+                        <p>⚠️ 无法自动加载作品数据</p>
+                        <p style="margin-top: 10px; font-size: 1rem;">请手动上传Excel文件查看作品</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    processData(jsonData);
+                } catch (error) {
+                    alert('读取文件失败，请确保上传的是有效的Excel文件');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processData(data) {
+            if (data.length < 2) {
+                alert('Excel文件为空或格式不正确');
+                return;
+            }
+
+            const headers = data[0];
+            const rows = data.slice(1);
+
+            const fieldMapping = {
+                '姓名': 'name',
+                '学校': 'school',
+                '内容': 'content',
+                '浏览量': 'views',
+                '点赞数': 'likes',
+                '评论数': 'comments',
+                '用户ip': 'location',
+                '创建时间': 'createTime',
+                '图片': 'images',
+                '视频': 'video',
+                '作品名称': 'title',
+                'Tag': 'tags',
+                '主题': 'theme',
+                'AI结合': 'aiCombined'
+            };
+
+            allWorks = rows.map(row => {
+                const work = {};
+                headers.forEach((header, index) => {
+                    if (fieldMapping[header]) {
+                        work[fieldMapping[header]] = row[index] || '';
+                    }
+                });
+
+                work.views = parseInt(work.views) || 0;
+                work.likes = parseInt(work.likes) || 0;
+                work.comments = parseInt(work.comments) || 0;
+
+                work.imageUrls = parseImages(work.images);
+
+                return work;
+            }).filter(work => work.title);
+
+            // 按浏览量从高到低排序
+            allWorks.sort((a, b) => b.views - a.views);
+
+            displayedWorks = [...allWorks];
+            renderWorks();
+            updateStats();
+            populateTagFilter();
+            
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('searchBox').style.display = 'block';
+            document.getElementById('filterSection').style.display = 'block';
+            
+            // 初始化图片懒加载
+            initLazyLoading();
+        }
+
+        function populateTagFilter() {
+            const tagMap = new Map();
+            const themeMap = new Map();
+            const aiMap = new Map();
+            const locationMap = new Map();
+            
+            allWorks.forEach(work => {
+                // 处理Tag
+                if (work.tags) {
+                    const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                    tagList.forEach(tag => {
+                        tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+                    });
+                }
+                
+                // 处理主题
+                if (work.theme) {
+                    themeMap.set(work.theme.trim(), (themeMap.get(work.theme.trim()) || 0) + 1);
+                }
+                
+                // 处理AI结合
+                if (work.aiCombined) {
+                    aiMap.set(work.aiCombined.trim(), (aiMap.get(work.aiCombined.trim()) || 0) + 1);
+                }
+                
+                // 处理IP地点
+                if (work.location) {
+                    locationMap.set(work.location.trim(), (locationMap.get(work.location.trim()) || 0) + 1);
+                }
+            });
+            
+            // 填充Tag筛选
+            const tagFilter = document.getElementById('tagFilter');
+            tagFilter.innerHTML = '<option value="">全部标签</option>';
+            Array.from(tagMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([tag, count]) => {
+                const option = document.createElement('option');
+                option.value = tag;
+                option.textContent = `${tag} (${count})`;
+                tagFilter.appendChild(option);
+            });
+            
+            // 填充主题筛选
+            const themeFilter = document.getElementById('themeFilter');
+            themeFilter.innerHTML = '<option value="">全部主题</option>';
+            Array.from(themeMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([theme, count]) => {
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = `${theme} (${count})`;
+                themeFilter.appendChild(option);
+            });
+            
+            // 填充AI结合筛选
+            const aiFilter = document.getElementById('aiFilter');
+            aiFilter.innerHTML = '<option value="">全部</option>';
+            Array.from(aiMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([ai, count]) => {
+                const option = document.createElement('option');
+                option.value = ai;
+                option.textContent = `${ai} (${count})`;
+                aiFilter.appendChild(option);
+            });
+            
+            // 填充地点筛选
+            const locationFilter = document.getElementById('locationFilter');
+            locationFilter.innerHTML = '<option value="">全部地点</option>';
+            Array.from(locationMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([location, count]) => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = `${location} (${count})`;
+                locationFilter.appendChild(option);
+            });
+            
+            // 保存所有选项数据
+            window.allTagOptions = Array.from(tagMap.entries());
+            window.allThemeOptions = Array.from(themeMap.entries());
+            window.allAiOptions = Array.from(aiMap.entries());
+            window.allLocationOptions = Array.from(locationMap.entries());
+        }
+
+        function updateFilterOptions() {
+            const tagFilter = document.getElementById('tagFilter');
+            const themeFilter = document.getElementById('themeFilter');
+            const aiFilter = document.getElementById('aiFilter');
+            const locationFilter = document.getElementById('locationFilter');
+            
+            const selectedTag = tagFilter.value;
+            const selectedTheme = themeFilter.value;
+            const selectedAI = aiFilter.value;
+            const selectedLocation = locationFilter.value;
+            
+            // 计算每个筛选器中每个选项的可用作品数
+            const getTagCount = (tag) => {
+                return allWorks.filter(work => {
+                    if (!work.tags) return false;
+                    const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                    const matchTag = tag ? tagList.includes(tag) : true;
+                    const matchTheme = selectedTheme ? work.theme === selectedTheme : true;
+                    const matchAI = selectedAI ? work.aiCombined === selectedAI : true;
+                    const matchLocation = selectedLocation ? work.location === selectedLocation : true;
+                    return matchTag && matchTheme && matchAI && matchLocation;
+                }).length;
+            };
+            
+            const getThemeCount = (theme) => {
+                return allWorks.filter(work => {
+                    const matchTag = selectedTag ? (() => {
+                        if (!work.tags) return false;
+                        const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                        return tagList.includes(selectedTag);
+                    })() : true;
+                    const matchTheme = theme ? work.theme === theme : true;
+                    const matchAI = selectedAI ? work.aiCombined === selectedAI : true;
+                    const matchLocation = selectedLocation ? work.location === selectedLocation : true;
+                    return matchTag && matchTheme && matchAI && matchLocation;
+                }).length;
+            };
+            
+            const getAICount = (ai) => {
+                return allWorks.filter(work => {
+                    const matchTag = selectedTag ? (() => {
+                        if (!work.tags) return false;
+                        const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                        return tagList.includes(selectedTag);
+                    })() : true;
+                    const matchTheme = selectedTheme ? work.theme === selectedTheme : true;
+                    const matchAI = ai ? work.aiCombined === ai : true;
+                    const matchLocation = selectedLocation ? work.location === selectedLocation : true;
+                    return matchTag && matchTheme && matchAI && matchLocation;
+                }).length;
+            };
+            
+            const getLocationCount = (location) => {
+                return allWorks.filter(work => {
+                    const matchTag = selectedTag ? (() => {
+                        if (!work.tags) return false;
+                        const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                        return tagList.includes(selectedTag);
+                    })() : true;
+                    const matchTheme = selectedTheme ? work.theme === selectedTheme : true;
+                    const matchAI = selectedAI ? work.aiCombined === selectedAI : true;
+                    const matchLocation = location ? work.location === location : true;
+                    return matchTag && matchTheme && matchAI && matchLocation;
+                }).length;
+            };
+            
+            // 更新Tag选项
+            const tagOptions = tagFilter.querySelectorAll('option');
+            tagOptions.forEach(option => {
+                if (option.value) {
+                    const count = getTagCount(option.value);
+                    option.textContent = `${option.value} (${count})`;
+                    option.disabled = count === 0;
+                    option.style.color = count === 0 ? '#ccc' : '#333';
+                }
+            });
+            
+            // 更新主题选项
+            const themeOptions = themeFilter.querySelectorAll('option');
+            themeOptions.forEach(option => {
+                if (option.value) {
+                    const count = getThemeCount(option.value);
+                    option.textContent = `${option.value} (${count})`;
+                    option.disabled = count === 0;
+                    option.style.color = count === 0 ? '#ccc' : '#333';
+                }
+            });
+            
+            // 更新AI选项
+            const aiOptions = aiFilter.querySelectorAll('option');
+            aiOptions.forEach(option => {
+                if (option.value) {
+                    const count = getAICount(option.value);
+                    option.textContent = `${option.value} (${count})`;
+                    option.disabled = count === 0;
+                    option.style.color = count === 0 ? '#ccc' : '#333';
+                }
+            });
+            
+            // 更新地点选项
+            const locationOptions = locationFilter.querySelectorAll('option');
+            locationOptions.forEach(option => {
+                if (option.value) {
+                    const count = getLocationCount(option.value);
+                    option.textContent = `${option.value} (${count})`;
+                    option.disabled = count === 0;
+                    option.style.color = count === 0 ? '#ccc' : '#333';
+                }
+            });
+        }
+
+        function parseImages(imagesStr) {
+            if (!imagesStr || typeof imagesStr !== 'string') return [];
+            
+            const pattern = /https?:\/\/[^\s]+?\.(?:png|jpg|jpeg|gif|webp)/gi;
+            const matches = imagesStr.match(pattern);
+            return matches || [];
+        }
+
+        function renderWorks() {
+            const grid = document.getElementById('worksGrid');
+            
+            if (displayedWorks.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">暂无作品数据</div>';
+                return;
+            }
+
+            grid.innerHTML = displayedWorks.map(work => `
+                <div class="work-card">
+                    <div class="work-header">
+                        <div class="work-title">${escapeHtml(work.title)}</div>
+                        <div class="work-meta">
+                            <span class="meta-tag">👤 ${escapeHtml(work.name || '未知')}</span>
+                            <span class="meta-tag">🏫 ${escapeHtml(work.school || '未知')}</span>
+                            ${work.tags ? `<span class="meta-tag">🏷️ ${escapeHtml(work.tags)}</span>` : ''}
+                            ${work.theme ? `<span class="meta-tag">🎯 ${escapeHtml(work.theme)}</span>` : ''}
+                            ${work.aiCombined ? `<span class="meta-tag">🤖 AI: ${escapeHtml(work.aiCombined)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="work-body">
+                        <div class="work-stats">
+                            <div class="stat-item">
+                                <div class="number">${work.views}</div>
+                                <div class="label">浏览量</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="number">${work.likes}</div>
+                                <div class="label">点赞数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="number">${work.comments}</div>
+                                <div class="label">评论数</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-row">
+                            <div class="info-label">创建时间:</div>
+                            <div class="info-value">${formatDateTime(work.createTime)}</div>
+                        </div>
+                        ${work.location ? `
+                        <div class="info-row">
+                            <div class="info-label">位置:</div>
+                            <div class="info-value"><span class="location">📍 ${escapeHtml(work.location)}</span></div>
+                        </div>
+                        ` : ''}
+                        <div class="info-row">
+                            <div class="info-label">内容:</div>
+                            <div class="info-value content">${escapeHtml(work.content || '暂无内容')}</div>
+                        </div>
+                        
+                        ${work.imageUrls.length > 0 ? `
+                        <div class="media-section">
+                            <div class="media-title">📷 图片 (${work.imageUrls.length}张)</div>
+                            <div class="images-grid">
+                                ${work.imageUrls.map((url, index) => `
+                                    <div class="image-placeholder" data-src="${escapeHtml(url)}" data-index="${index}">
+                                        <div class="loading-icon">📷</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${work.video ? `
+                        <div class="media-section">
+                            <div class="media-title">🎬 视频</div>
+                            <div class="video-container">
+                                <div class="video-placeholder" onclick="loadVideo(this, '${escapeHtml(work.video)}')">
+                                    <div class="play-icon">▶</div>
+                                    <div class="play-text">点击播放视频</div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${!work.imageUrls.length && !work.video ? '<div class="no-media">暂无图片或视频</div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalWorks = allWorks.length;
+            const totalViews = allWorks.reduce((sum, w) => sum + w.views, 0);
+            const totalLikes = allWorks.reduce((sum, w) => sum + w.likes, 0);
+            const totalComments = allWorks.reduce((sum, w) => sum + w.comments, 0);
+
+            document.getElementById('totalWorks').textContent = totalWorks;
+            document.getElementById('totalViews').textContent = totalViews;
+            document.getElementById('totalLikes').textContent = totalLikes;
+            document.getElementById('totalComments').textContent = totalComments;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '未知';
+            
+            // 如果已经是 2026/1/5 这种格式，直接返回
+            if (typeof dateStr === 'string' && /^\d{4}\/\d{1,2}\/\d{1,2}/.test(dateStr)) {
+                return dateStr;
+            }
+            
+            // 处理Excel日期数字（从1900年1月1日开始的天数）
+            if (typeof dateStr === 'number') {
+                // Excel从1900年1月1日开始，实际需要减去2天（Excel有个bug，认为1900是闰年）
+                const excelEpoch = new Date(1900, 0, 1);
+                const daysSinceEpoch = dateStr - 2; // 减去2天修正
+                const date = new Date(excelEpoch.getTime() + daysSinceEpoch * 24 * 60 * 60 * 1000);
+                
+                if (!isNaN(date.getTime())) {
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    const hours = date.getHours().toString().padStart(2, '0');
+                    const minutes = date.getMinutes().toString().padStart(2, '0');
+                    const seconds = date.getSeconds().toString().padStart(2, '0');
+                    
+                    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                }
+            }
+            
+            // 尝试解析字符串日期
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const seconds = date.getSeconds().toString().padStart(2, '0');
+                
+                return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+            }
+            
+            // 如果都解析失败，返回原始值
+            return dateStr;
+        }
+
+        function openModal(src) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImage');
+            img.src = src;
+            modal.classList.add('active');
+        }
+
+        // 懒加载视频函数
+        function loadVideo(placeholder, videoSrc) {
+            // 创建视频元素
+            const video = document.createElement('video');
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.height = 'auto';
+            video.preload = 'metadata'; // 只预加载元数据，不预加载整个视频
+            
+            // 创建source元素
+            const source = document.createElement('source');
+            source.src = videoSrc;
+            source.type = 'video/mp4';
+            
+            video.appendChild(source);
+            
+            // 添加错误处理
+            video.onerror = function() {
+                placeholder.innerHTML = `
+                    <div style="color: #999; text-align: center; padding: 20px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                        <div>视频加载失败</div>
+                    </div>
+                `;
+            };
+            
+            // 替换占位符
+            placeholder.parentNode.replaceChild(video, placeholder);
+            
+            // 自动播放（如果浏览器允许）
+            video.play().catch(function(error) {
+                console.log('自动播放被阻止:', error);
+            });
+        }
+
+        // 图片懒加载功能
+        let imageObserver;
+        
+        function initLazyLoading() {
+            // 如果浏览器支持 Intersection Observer
+            if ('IntersectionObserver' in window) {
+                // 如果已有观察器，先断开
+                if (imageObserver) {
+                    imageObserver.disconnect();
+                }
+                
+                imageObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            const placeholder = entry.target;
+                            loadImage(placeholder);
+                            imageObserver.unobserve(placeholder);
+                        }
+                    });
+                }, {
+                    rootMargin: '50px' // 提前50px开始加载
+                });
+                
+                // 观察所有图片占位符
+                document.querySelectorAll('.image-placeholder').forEach(function(placeholder) {
+                    imageObserver.observe(placeholder);
+                });
+            } else {
+                // 如果不支持 Intersection Observer，直接加载所有图片
+                document.querySelectorAll('.image-placeholder').forEach(function(placeholder) {
+                    loadImage(placeholder);
+                });
+            }
+        }
+        
+        function loadImage(placeholder) {
+            const imgSrc = placeholder.getAttribute('data-src');
+            if (!imgSrc) return;
+            
+            // 创建新的img元素
+            const img = document.createElement('img');
+            img.className = 'lazy-image';
+            img.alt = '作品图片';
+            img.style.width = '100%';
+            img.style.height = '100px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px';
+            img.style.cursor = 'pointer';
+            img.style.transition = 'transform 0.2s, opacity 0.3s';
+            
+            // 添加点击事件
+            img.onclick = function() {
+                openModal(imgSrc);
+            };
+            
+            // 添加悬停效果
+            img.onmouseover = function() {
+                this.style.transform = 'scale(1.05)';
+            };
+            img.onmouseout = function() {
+                this.style.transform = 'scale(1)';
+            };
+            
+            // 图片加载完成后的处理
+            img.onload = function() {
+                img.classList.add('loaded');
+            };
+            
+            // 图片加载失败的处理
+            img.onerror = function() {
+                placeholder.innerHTML = `
+                    <div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">
+                        <div style="font-size: 20px; margin-bottom: 5px;">❌</div>
+                        <div>图片加载失败</div>
+                    </div>
+                `;
+            };
+            
+            // 设置图片源，开始加载
+            img.src = imgSrc;
+            
+            // 替换占位符
+            placeholder.parentNode.replaceChild(img, placeholder);
+        }
+
+        document.getElementById('imageModal').addEventListener('click', function() {
+            this.classList.remove('active');
+        });
+
+        document.querySelector('.close-btn').addEventListener('click', function() {
+            document.getElementById('imageModal').classList.remove('active');
+        });
+
+        document.getElementById('searchInput').addEventListener('input', filterWorks);
+        document.getElementById('tagFilter').addEventListener('change', filterWorks);
+        document.getElementById('themeFilter').addEventListener('change', filterWorks);
+        document.getElementById('aiFilter').addEventListener('change', filterWorks);
+        document.getElementById('locationFilter').addEventListener('change', filterWorks);
+
+        function filterWorks() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const tagFilter = document.getElementById('tagFilter').value;
+            const themeFilter = document.getElementById('themeFilter').value;
+            const aiFilter = document.getElementById('aiFilter').value;
+            const locationFilter = document.getElementById('locationFilter').value;
+            
+            displayedWorks = allWorks.filter(work => {
+                // 搜索过滤
+                let matchSearch = true;
+                if (query) {
+                    matchSearch = (work.title && work.title.toLowerCase().includes(query)) ||
+                                  (work.name && work.name.toLowerCase().includes(query)) ||
+                                  (work.school && work.school.toLowerCase().includes(query)) ||
+                                  (work.content && work.content.toLowerCase().includes(query));
+                }
+                
+                // 标签过滤
+                let matchTag = true;
+                if (tagFilter) {
+                    if (work.tags) {
+                        const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                        matchTag = tagList.includes(tagFilter);
+                    } else {
+                        matchTag = false;
+                    }
+                }
+                
+                // 主题过滤
+                let matchTheme = true;
+                if (themeFilter) {
+                    matchTheme = work.theme === themeFilter;
+                }
+                
+                // AI结合过滤
+                let matchAI = true;
+                if (aiFilter) {
+                    matchAI = work.aiCombined === aiFilter;
+                }
+                
+                // IP地点过滤
+                let matchLocation = true;
+                if (locationFilter) {
+                    matchLocation = work.location === locationFilter;
+                }
+                
+                return matchSearch && matchTag && matchTheme && matchAI && matchLocation;
+            });
+            
+            // 筛选后也按浏览量排序
+            displayedWorks.sort((a, b) => b.views - a.views);
+            
+            renderWorks();
+            updateFilterOptions();
+            
+            // 重新初始化图片懒加载
+            initLazyLoading();
+        }
+    </script>
+</body>
+</html>
