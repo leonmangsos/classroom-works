@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>腾讯未来教室作品展示平台</title>
+    <title>腾讯未来教室作品展示平台 v2.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="data.js"></script>
     <style>
@@ -603,23 +603,57 @@
         // 自动加载Excel文件
         async function loadExcelFile() {
             try {
+                console.log('开始加载Excel文件...');
                 const response = await fetch('历史作品_IP地址补充主题AI数据.xlsx');
+                
                 if (!response.ok) {
-                    throw new Error('无法加载Excel文件');
+                    console.warn(`Excel文件加载失败: HTTP ${response.status} ${response.statusText}`);
+                    throw new Error(`无法加载Excel文件 (HTTP ${response.status})`);
                 }
+                
+                console.log('Excel文件响应成功，开始解析...');
                 const arrayBuffer = await response.arrayBuffer();
                 const data = new Uint8Array(arrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
+                
+                if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                    throw new Error('Excel文件中没有找到工作表');
+                }
+                
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                if (!firstSheet) {
+                    throw new Error('无法读取Excel工作表');
+                }
+                
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                console.log('Excel解析完成，数据行数:', jsonData.length);
                 
                 processData(jsonData);
             } catch (error) {
                 console.error('加载Excel文件失败:', error);
+                
+                // 显示更详细的错误信息
+                let errorMessage = '⚠️ 无法自动加载作品数据';
+                let errorDetail = '请手动上传Excel文件查看作品';
+                
+                if (error.message.includes('HTTP 404')) {
+                    errorDetail = 'Excel文件不存在，请确保文件名为"历史作品_IP地址补充主题AI数据.xlsx"';
+                } else if (error.message.includes('HTTP')) {
+                    errorDetail = `服务器响应错误: ${error.message}`;
+                } else if (error.message.includes('工作表')) {
+                    errorDetail = 'Excel文件格式异常，请检查文件内容';
+                } else {
+                    errorDetail = `加载失败: ${error.message}`;
+                }
+                
                 document.getElementById('worksGrid').innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
-                        <p>⚠️ 无法自动加载作品数据</p>
-                        <p style="margin-top: 10px; font-size: 1rem;">请手动上传Excel文件查看作品</p>
+                        <p>${errorMessage}</p>
+                        <p style="margin-top: 10px; font-size: 1rem; opacity: 0.8;">${errorDetail}</p>
+                        <button onclick="document.getElementById('fileInput').click();" 
+                                style="margin-top: 15px; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer; font-size: 14px;">
+                            📁 选择Excel文件
+                        </button>
                     </div>
                 `;
             }
@@ -649,70 +683,123 @@
         }
 
         function processData(data) {
-            if (data.length < 2) {
-                alert('Excel文件为空或格式不正确');
-                return;
-            }
+            try {
+                if (!data || !Array.isArray(data)) {
+                    throw new Error('数据格式无效');
+                }
+                
+                if (data.length < 2) {
+                    throw new Error('Excel文件为空或格式不正确');
+                }
 
-            const headers = data[0];
-            const rows = data.slice(1);
+                console.log('开始处理数据，总行数:', data.length);
+                const headers = data[0];
+                const rows = data.slice(1);
+                
+                if (!headers || !Array.isArray(headers)) {
+                    throw new Error('表头格式无效');
+                }
+                
+                console.log('表头:', headers);
 
-            const fieldMapping = {
-                '姓名': 'name',
-                '学校': 'school',
-                '内容': 'content',
-                '浏览量': 'views',
-                '点赞数': 'likes',
-                '评论数': 'comments',
-                '用户ip': 'location',
-                '创建时间': 'createTime',
-                '图片': 'images',
-                '视频': 'video',
-                '作品名称': 'title',
-                'Tag': 'tags',
-                '主题': 'theme',
-                'AI结合': 'aiCombined'
-            };
+                const fieldMapping = {
+                    '姓名': 'name',
+                    '学校': 'school',
+                    '内容': 'content',
+                    '浏览量': 'views',
+                    '点赞数': 'likes',
+                    '评论数': 'comments',
+                    '用户ip': 'location',
+                    '创建时间': 'createTime',
+                    '图片': 'images',
+                    '视频': 'video',
+                    '作品名称': 'title',
+                    'Tag': 'tags',
+                    '主题': 'theme',
+                    'AI结合': 'aiCombined'
+                };
 
-            allWorks = rows.map(row => {
-                const work = {};
-                headers.forEach((header, index) => {
-                    if (fieldMapping[header]) {
-                        work[fieldMapping[header]] = row[index] || '';
+                allWorks = rows.map((row, index) => {
+                    try {
+                        if (!row || !Array.isArray(row)) {
+                            console.warn(`第${index + 2}行数据格式无效:`, row);
+                            return null;
+                        }
+                        
+                        const work = {};
+                        headers.forEach((header, headerIndex) => {
+                            if (fieldMapping[header]) {
+                                work[fieldMapping[header]] = row[headerIndex] || '';
+                            }
+                        });
+
+                        // 确保数值字段为数字
+                        work.views = parseInt(work.views) || 0;
+                        work.likes = parseInt(work.likes) || 0;
+                        work.comments = parseInt(work.comments) || 0;
+
+                        // 解析图片URL
+                        work.imageUrls = parseImages(work.images);
+
+                        return work;
+                    } catch (error) {
+                        console.error(`处理第${index + 2}行数据时出错:`, error, row);
+                        return null;
+                    }
+                }).filter(work => work && work.title); // 过滤掉无效数据和没有标题的作品
+
+                console.log('有效作品数量:', allWorks.length);
+
+                if (allWorks.length === 0) {
+                    throw new Error('没有找到有效的作品数据');
+                }
+
+                // 按浏览量从高到低排序
+                allWorks.sort((a, b) => {
+                    try {
+                        return (parseInt(b.views) || 0) - (parseInt(a.views) || 0);
+                    } catch (error) {
+                        console.error('排序时出错:', error);
+                        return 0;
                     }
                 });
 
-                work.views = parseInt(work.views) || 0;
-                work.likes = parseInt(work.likes) || 0;
-                work.comments = parseInt(work.comments) || 0;
-
-                work.imageUrls = parseImages(work.images);
-
-                return work;
-            }).filter(work => work.title);
-
-            // 按浏览量从高到低排序
-            allWorks.sort((a, b) => b.views - a.views);
-
-            displayedWorks = [...allWorks];
-            renderWorks();
-            updateStats();
-            populateTagFilter();
-            
-            document.getElementById('stats').style.display = 'grid';
-            document.getElementById('searchBox').style.display = 'block';
-            document.getElementById('filterSection').style.display = 'block';
-            
-            // 确保搜索框获得焦点
-            setTimeout(() => {
-                const searchInput = document.getElementById('searchInput');
-                if (searchInput) {
-                    searchInput.focus();
-                }
-            }, 100);
-            
-            // 初始化图片懒加载
-            initLazyLoading();
+                displayedWorks = [...allWorks];
+                renderWorks();
+                updateStats();
+                populateTagFilter();
+                
+                document.getElementById('stats').style.display = 'grid';
+                document.getElementById('searchBox').style.display = 'block';
+                document.getElementById('filterSection').style.display = 'block';
+                
+                // 确保搜索框获得焦点
+                setTimeout(() => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 100);
+                
+                // 初始化图片懒加载
+                initLazyLoading();
+                
+                console.log('数据处理完成');
+            } catch (error) {
+                console.error('处理数据时出错:', error);
+                alert(`处理数据失败: ${error.message}`);
+                
+                document.getElementById('worksGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
+                        <p>⚠️ 数据处理失败</p>
+                        <p style="margin-top: 10px; font-size: 1rem; opacity: 0.8;">${error.message}</p>
+                        <button onclick="document.getElementById('fileInput').click();" 
+                                style="margin-top: 15px; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer; font-size: 14px;">
+                            📁 重新选择文件
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         function populateTagFilter() {
@@ -920,7 +1007,7 @@
                 if (searchQuery) {
                     grid.innerHTML = `
                         <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
-                            <p>🔍 未找到包含 "${searchQuery}" 的作品</p>
+                            <p>🔍 未找到包含 "${escapeHtml(searchQuery)}" 的作品</p>
                             <p style="margin-top: 10px; font-size: 1rem; opacity: 0.8;">请尝试其他关键词或清空搜索条件</p>
                             <button onclick="document.getElementById('searchInput').value=''; filterWorks();" 
                                     style="margin-top: 15px; padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer;">
@@ -934,78 +1021,113 @@
                 return;
             }
 
-            grid.innerHTML = displayedWorks.map(work => `
-                <div class="work-card">
-                    <div class="work-header">
-                        <div class="work-title">${escapeHtml(work.title)}</div>
-                        <div class="work-meta">
-                            <span class="meta-tag">👤 ${escapeHtml(work.name || '未知')}</span>
-                            <span class="meta-tag">🏫 ${escapeHtml(work.school || '未知')}</span>
-                            ${work.tags ? `<span class="meta-tag">🏷️ ${escapeHtml(work.tags)}</span>` : ''}
-                            ${work.theme ? `<span class="meta-tag">🎯 ${escapeHtml(work.theme)}</span>` : ''}
-                            ${work.aiCombined ? `<span class="meta-tag">🤖 AI: ${escapeHtml(work.aiCombined)}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="work-body">
-                        <div class="work-stats">
-                            <div class="stat-item">
-                                <div class="number">${work.views}</div>
-                                <div class="label">浏览量</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="number">${work.likes}</div>
-                                <div class="label">点赞数</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="number">${work.comments}</div>
-                                <div class="label">评论数</div>
-                            </div>
-                        </div>
-                        
-                        <div class="info-row">
-                            <div class="info-label">创建时间:</div>
-                            <div class="info-value">${formatDateTime(work.createTime)}</div>
-                        </div>
-                        ${work.location ? `
-                        <div class="info-row">
-                            <div class="info-label">位置:</div>
-                            <div class="info-value"><span class="location">📍 ${escapeHtml(work.location)}</span></div>
-                        </div>
-                        ` : ''}
-                        <div class="info-row">
-                            <div class="info-label">内容:</div>
-                            <div class="info-value content">${escapeHtml(work.content || '暂无内容')}</div>
-                        </div>
-                        
-                        ${work.imageUrls.length > 0 ? `
-                        <div class="media-section">
-                            <div class="media-title">📷 图片 (${work.imageUrls.length}张)</div>
-                            <div class="images-grid">
-                                ${work.imageUrls.map((url, index) => `
-                                    <div class="image-placeholder" data-src="${escapeHtml(url)}" data-index="${index}">
-                                        <div class="loading-icon">📷</div>
+            try {
+                grid.innerHTML = displayedWorks.map(work => {
+                    // 确保work对象有效
+                    if (!work || typeof work !== 'object') {
+                        console.warn('渲染时发现无效作品对象:', work);
+                        return '';
+                    }
+                    
+                    try {
+                        return `
+                            <div class="work-card">
+                                <div class="work-header">
+                                    <div class="work-title">${escapeHtml(safeToString(work.title))}</div>
+                                    <div class="work-meta">
+                                        <span class="meta-tag">👤 ${escapeHtml(safeToString(work.name) || '未知')}</span>
+                                        <span class="meta-tag">🏫 ${escapeHtml(safeToString(work.school) || '未知')}</span>
+                                        ${work.tags ? `<span class="meta-tag">🏷️ ${escapeHtml(safeToString(work.tags))}</span>` : ''}
+                                        ${work.theme ? `<span class="meta-tag">🎯 ${escapeHtml(safeToString(work.theme))}</span>` : ''}
+                                        ${work.aiCombined ? `<span class="meta-tag">🤖 AI: ${escapeHtml(safeToString(work.aiCombined))}</span>` : ''}
                                     </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        ${work.video ? `
-                        <div class="media-section">
-                            <div class="media-title">🎬 视频</div>
-                            <div class="video-container">
-                                <div class="video-placeholder" onclick="loadVideo(this, '${escapeHtml(work.video)}')">
-                                    <div class="play-icon">▶</div>
-                                    <div class="play-text">点击播放视频</div>
+                                </div>
+                                <div class="work-body">
+                                    <div class="work-stats">
+                                        <div class="stat-item">
+                                            <div class="number">${parseInt(work.views) || 0}</div>
+                                            <div class="label">浏览量</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="number">${parseInt(work.likes) || 0}</div>
+                                            <div class="label">点赞数</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="number">${parseInt(work.comments) || 0}</div>
+                                            <div class="label">评论数</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="info-row">
+                                        <div class="info-label">创建时间:</div>
+                                        <div class="info-value">${formatDateTime(work.createTime)}</div>
+                                    </div>
+                                    ${work.location ? `
+                                    <div class="info-row">
+                                        <div class="info-label">位置:</div>
+                                        <div class="info-value"><span class="location">📍 ${escapeHtml(safeToString(work.location))}</span></div>
+                                    </div>
+                                    ` : ''}
+                                    <div class="info-row">
+                                        <div class="info-label">内容:</div>
+                                        <div class="info-value content">${escapeHtml(safeToString(work.content) || '暂无内容')}</div>
+                                    </div>
+                                    
+                                    ${work.imageUrls && work.imageUrls.length > 0 ? `
+                                    <div class="media-section">
+                                        <div class="media-title">📷 图片 (${work.imageUrls.length}张)</div>
+                                        <div class="images-grid">
+                                            ${work.imageUrls.map((url, index) => `
+                                                <div class="image-placeholder" data-src="${escapeHtml(safeToString(url))}" data-index="${index}">
+                                                    <div class="loading-icon">📷</div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${work.video ? `
+                                    <div class="media-section">
+                                        <div class="media-title">🎬 视频</div>
+                                        <div class="video-container">
+                                            <div class="video-placeholder" onclick="loadVideo(this, '${escapeHtml(safeToString(work.video))}')">
+                                                <div class="play-icon">▶</div>
+                                                <div class="play-text">点击播放视频</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${(!work.imageUrls || work.imageUrls.length === 0) && !work.video ? '<div class="no-media">暂无图片或视频</div>' : ''}
                                 </div>
                             </div>
-                        </div>
-                        ` : ''}
-                        
-                        ${!work.imageUrls.length && !work.video ? '<div class="no-media">暂无图片或视频</div>' : ''}
+                        `;
+                    } catch (error) {
+                        console.error('渲染单个作品时出错:', error, work);
+                        return `
+                            <div class="work-card">
+                                <div class="work-header">
+                                    <div class="work-title">作品渲染出错</div>
+                                </div>
+                                <div class="work-body">
+                                    <div class="info-row">
+                                        <div class="info-label">错误:</div>
+                                        <div class="info-value">该作品数据格式异常，无法正常显示</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            } catch (error) {
+                console.error('渲染作品列表时出错:', error);
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
+                        <p>⚠️ 渲染作品时出现错误</p>
+                        <p style="margin-top: 10px; font-size: 1rem;">请刷新页面重试</p>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }
         }
 
         function updateStats() {
@@ -1211,6 +1333,28 @@
         document.getElementById('aiFilter').addEventListener('change', filterWorks);
         document.getElementById('locationFilter').addEventListener('change', filterWorks);
 
+        // 安全的字符串转换函数 - 增强版
+        function safeToString(value) {
+            try {
+                if (value === null || value === undefined) return '';
+                if (typeof value === 'string') return value;
+                if (typeof value === 'number') return value.toString();
+                if (typeof value === 'boolean') return value.toString();
+                if (typeof value === 'object') {
+                    // 如果是数组，转换为字符串
+                    if (Array.isArray(value)) {
+                        return value.join(', ');
+                    }
+                    // 如果是普通对象，转换为JSON字符串
+                    return JSON.stringify(value);
+                }
+                return String(value);
+            } catch (error) {
+                console.warn('safeToString转换失败:', error, value);
+                return '';
+            }
+        }
+
         function filterWorks() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const tagFilter = document.getElementById('tagFilter').value;
@@ -1218,43 +1362,49 @@
             const aiFilter = document.getElementById('aiFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;
             
-            console.log('搜索条件:', { query, tagFilter, themeFilter, aiFilter, locationFilter });
+            // 简化日志输出，避免显示Object
+            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter);
             console.log('总作品数:', allWorks.length);
             
             displayedWorks = allWorks.filter(work => {
+                // 确保work对象存在且有效
+                if (!work || typeof work !== 'object') {
+                    console.warn('无效的作品对象:', work);
+                    return false;
+                }
+                
                 // 搜索过滤
                 let matchSearch = true;
                 if (query) {
-                    const title = (work.title || '').toString().toLowerCase();
-                    const name = (work.name || '').toString().toLowerCase();
-                    const school = (work.school || '').toString().toLowerCase();
-                    const content = (work.content || '').toString().toLowerCase();
-                    
-                    matchSearch = title.includes(query) ||
-                                  name.includes(query) ||
-                                  school.includes(query) ||
-                                  content.includes(query);
-                    
-                    // 调试信息
-                    if (query && !matchSearch) {
-                        console.log('搜索不匹配:', {
-                            query,
-                            title: work.title,
-                            name: work.name,
-                            school: work.school,
-                            content: work.content ? work.content.toString().substring(0, 50) + '...' : ''
-                        });
+                    try {
+                        const title = safeToString(work.title).toLowerCase();
+                        const name = safeToString(work.name).toLowerCase();
+                        const school = safeToString(work.school).toLowerCase();
+                        const content = safeToString(work.content).toLowerCase();
+                        
+                        matchSearch = title.includes(query) ||
+                                      name.includes(query) ||
+                                      school.includes(query) ||
+                                      content.includes(query);
+                    } catch (error) {
+                        console.error('搜索过滤出错:', error, work);
+                        return false;
                     }
                 }
                 
                 // 标签过滤
                 let matchTag = true;
                 if (tagFilter) {
-                    const tags = (work.tags || '').toString();
-                    if (tags) {
-                        const tagList = tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
-                        matchTag = tagList.includes(tagFilter);
-                    } else {
+                    try {
+                        const tags = safeToString(work.tags);
+                        if (tags) {
+                            const tagList = tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                            matchTag = tagList.includes(tagFilter);
+                        } else {
+                            matchTag = false;
+                        }
+                    } catch (error) {
+                        console.error('标签过滤出错:', error, work);
                         matchTag = false;
                     }
                 }
@@ -1262,19 +1412,34 @@
                 // 主题过滤
                 let matchTheme = true;
                 if (themeFilter) {
-                    matchTheme = (work.theme || '').toString() === themeFilter;
+                    try {
+                        matchTheme = safeToString(work.theme) === themeFilter;
+                    } catch (error) {
+                        console.error('主题过滤出错:', error, work);
+                        matchTheme = false;
+                    }
                 }
                 
                 // AI结合过滤
                 let matchAI = true;
                 if (aiFilter) {
-                    matchAI = (work.aiCombined || '').toString() === aiFilter;
+                    try {
+                        matchAI = safeToString(work.aiCombined) === aiFilter;
+                    } catch (error) {
+                        console.error('AI过滤出错:', error, work);
+                        matchAI = false;
+                    }
                 }
                 
                 // IP地点过滤
                 let matchLocation = true;
                 if (locationFilter) {
-                    matchLocation = (work.location || '').toString() === locationFilter;
+                    try {
+                        matchLocation = safeToString(work.location) === locationFilter;
+                    } catch (error) {
+                        console.error('地点过滤出错:', error, work);
+                        matchLocation = false;
+                    }
                 }
                 
                 return matchSearch && matchTag && matchTheme && matchAI && matchLocation;
@@ -1294,7 +1459,16 @@
             }
             
             // 筛选后也按浏览量排序
-            displayedWorks.sort((a, b) => b.views - a.views);
+            displayedWorks.sort((a, b) => {
+                try {
+                    const viewsA = parseInt(a.views) || 0;
+                    const viewsB = parseInt(b.views) || 0;
+                    return viewsB - viewsA;
+                } catch (error) {
+                    console.error('排序出错:', error);
+                    return 0;
+                }
+            });
             
             renderWorks();
             updateFilterOptions();
