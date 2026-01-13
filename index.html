@@ -552,6 +552,7 @@
 
         <div class="search-box" id="searchBox" style="display:none;">
             <input type="text" id="searchInput" placeholder="搜索作品名称、作者、学校、内容...">
+            <div id="searchStatus" style="margin-top: 8px; font-size: 14px; color: rgba(255,255,255,0.8); text-align: center;"></div>
         </div>
         <div class="filter-section" id="filterSection" style="display:none;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
@@ -915,7 +916,21 @@
             const grid = document.getElementById('worksGrid');
             
             if (displayedWorks.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">暂无作品数据</div>';
+                const searchQuery = document.getElementById('searchInput').value.trim();
+                if (searchQuery) {
+                    grid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">
+                            <p>🔍 未找到包含 "${searchQuery}" 的作品</p>
+                            <p style="margin-top: 10px; font-size: 1rem; opacity: 0.8;">请尝试其他关键词或清空搜索条件</p>
+                            <button onclick="document.getElementById('searchInput').value=''; filterWorks();" 
+                                    style="margin-top: 15px; padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; cursor: pointer;">
+                                清空搜索
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: white; font-size: 1.2rem; padding: 50px;">暂无作品数据</div>';
+                }
                 return;
             }
 
@@ -1203,6 +1218,9 @@
             const aiFilter = document.getElementById('aiFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;
             
+            console.log('搜索条件:', { query, tagFilter, themeFilter, aiFilter, locationFilter });
+            console.log('总作品数:', allWorks.length);
+            
             displayedWorks = allWorks.filter(work => {
                 // 搜索过滤
                 let matchSearch = true;
@@ -1211,6 +1229,17 @@
                                   (work.name && work.name.toLowerCase().includes(query)) ||
                                   (work.school && work.school.toLowerCase().includes(query)) ||
                                   (work.content && work.content.toLowerCase().includes(query));
+                    
+                    // 调试信息
+                    if (query && !matchSearch) {
+                        console.log('搜索不匹配:', {
+                            query,
+                            title: work.title,
+                            name: work.name,
+                            school: work.school,
+                            content: work.content ? work.content.substring(0, 50) + '...' : ''
+                        });
+                    }
                 }
                 
                 // 标签过滤
@@ -1244,6 +1273,19 @@
                 
                 return matchSearch && matchTag && matchTheme && matchAI && matchLocation;
             });
+            
+            console.log('筛选后作品数:', displayedWorks.length);
+            
+            // 更新搜索状态显示
+            const searchStatus = document.getElementById('searchStatus');
+            if (query || tagFilter || themeFilter || aiFilter || locationFilter) {
+                const totalWorks = allWorks.length;
+                const filteredWorks = displayedWorks.length;
+                searchStatus.textContent = `找到 ${filteredWorks} 个作品（共 ${totalWorks} 个）`;
+                searchStatus.style.display = 'block';
+            } else {
+                searchStatus.style.display = 'none';
+            }
             
             // 筛选后也按浏览量排序
             displayedWorks.sort((a, b) => b.views - a.views);
