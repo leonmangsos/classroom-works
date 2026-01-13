@@ -1225,10 +1225,15 @@
                 // 搜索过滤
                 let matchSearch = true;
                 if (query) {
-                    matchSearch = (work.title && work.title.toLowerCase().includes(query)) ||
-                                  (work.name && work.name.toLowerCase().includes(query)) ||
-                                  (work.school && work.school.toLowerCase().includes(query)) ||
-                                  (work.content && work.content.toLowerCase().includes(query));
+                    const title = (work.title || '').toString().toLowerCase();
+                    const name = (work.name || '').toString().toLowerCase();
+                    const school = (work.school || '').toString().toLowerCase();
+                    const content = (work.content || '').toString().toLowerCase();
+                    
+                    matchSearch = title.includes(query) ||
+                                  name.includes(query) ||
+                                  school.includes(query) ||
+                                  content.includes(query);
                     
                     // 调试信息
                     if (query && !matchSearch) {
@@ -1237,7 +1242,7 @@
                             title: work.title,
                             name: work.name,
                             school: work.school,
-                            content: work.content ? work.content.substring(0, 50) + '...' : ''
+                            content: work.content ? work.content.toString().substring(0, 50) + '...' : ''
                         });
                     }
                 }
@@ -1245,8 +1250,9 @@
                 // 标签过滤
                 let matchTag = true;
                 if (tagFilter) {
-                    if (work.tags) {
-                        const tagList = work.tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                    const tags = (work.tags || '').toString();
+                    if (tags) {
+                        const tagList = tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
                         matchTag = tagList.includes(tagFilter);
                     } else {
                         matchTag = false;
@@ -1256,19 +1262,19 @@
                 // 主题过滤
                 let matchTheme = true;
                 if (themeFilter) {
-                    matchTheme = work.theme === themeFilter;
+                    matchTheme = (work.theme || '').toString() === themeFilter;
                 }
                 
                 // AI结合过滤
                 let matchAI = true;
                 if (aiFilter) {
-                    matchAI = work.aiCombined === aiFilter;
+                    matchAI = (work.aiCombined || '').toString() === aiFilter;
                 }
                 
                 // IP地点过滤
                 let matchLocation = true;
                 if (locationFilter) {
-                    matchLocation = work.location === locationFilter;
+                    matchLocation = (work.location || '').toString() === locationFilter;
                 }
                 
                 return matchSearch && matchTag && matchTheme && matchAI && matchLocation;
