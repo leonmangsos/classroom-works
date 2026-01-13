@@ -87,7 +87,7 @@
         }
         .works-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-width, 320px), 1fr));
             gap: 35px;
         }
         .work-card {
@@ -335,6 +335,52 @@
             border-color: #667eea;
         }
 
+        /* 滑块样式 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-track {
+            background: rgba(255,255,255,0.3);
+            height: 6px;
+            border-radius: 3px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+        
+        input[type="range"]::-moz-range-track {
+            background: rgba(255,255,255,0.3);
+            height: 6px;
+            border-radius: 3px;
+            border: none;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
             /* 移动端适配 */
             @media (max-width: 768px) {
                 body {
@@ -554,6 +600,21 @@
             <input type="text" id="searchInput" placeholder="搜索作品名称、作者、学校、内容...">
             <div id="searchStatus" style="margin-top: 8px; font-size: 14px; color: rgba(255,255,255,0.8); text-align: center;"></div>
         </div>
+
+        <!-- 作品框宽度调整控制器 -->
+        <div class="width-control" id="widthControl" style="display:none;">
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(10px);">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <label style="color: white; font-weight: 600; font-size: 16px;">📏 作品框宽度:</label>
+                    <input type="range" id="widthSlider" min="280" max="600" value="320" 
+                           style="flex: 1; min-width: 200px; max-width: 300px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; cursor: pointer;">
+                    <span id="widthValue" style="color: white; font-weight: bold; font-size: 16px; min-width: 60px; text-align: center;">320px</span>
+                    <button onclick="resetWidth()" style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        🔄 重置
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="filter-section" id="filterSection" style="display:none;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
                 <div>
@@ -772,6 +833,10 @@
                 document.getElementById('stats').style.display = 'grid';
                 document.getElementById('searchBox').style.display = 'block';
                 document.getElementById('filterSection').style.display = 'block';
+                document.getElementById('widthControl').style.display = 'block';
+                
+                // 初始化宽度控制器
+                initWidthControl();
                 
                 // 确保搜索框获得焦点
                 setTimeout(() => {
@@ -1332,6 +1397,44 @@
         document.getElementById('themeFilter').addEventListener('change', filterWorks);
         document.getElementById('aiFilter').addEventListener('change', filterWorks);
         document.getElementById('locationFilter').addEventListener('change', filterWorks);
+
+        // 宽度控制功能
+        function initWidthControl() {
+            const slider = document.getElementById('widthSlider');
+            const valueDisplay = document.getElementById('widthValue');
+            const worksGrid = document.getElementById('worksGrid');
+            
+            // 设置初始CSS变量
+            document.documentElement.style.setProperty('--card-width', '320px');
+            
+            slider.addEventListener('input', function() {
+                const width = this.value;
+                valueDisplay.textContent = width + 'px';
+                document.documentElement.style.setProperty('--card-width', width + 'px');
+                
+                // 添加平滑过渡效果
+                worksGrid.style.transition = 'all 0.3s ease';
+                setTimeout(() => {
+                    worksGrid.style.transition = '';
+                }, 300);
+            });
+        }
+        
+        function resetWidth() {
+            const slider = document.getElementById('widthSlider');
+            const valueDisplay = document.getElementById('widthValue');
+            const worksGrid = document.getElementById('worksGrid');
+            
+            slider.value = 320;
+            valueDisplay.textContent = '320px';
+            document.documentElement.style.setProperty('--card-width', '320px');
+            
+            // 添加平滑过渡效果
+            worksGrid.style.transition = 'all 0.3s ease';
+            setTimeout(() => {
+                worksGrid.style.transition = '';
+            }, 300);
+        }
 
         // 安全的字符串转换函数 - 增强版
         function safeToString(value) {
