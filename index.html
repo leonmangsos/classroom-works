@@ -129,7 +129,7 @@
         }
         .info-row {
             display: flex;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             align-items: flex-start;
         }
         .info-label {
@@ -144,10 +144,11 @@
             word-break: break-word;
         }
         .info-value.content {
-            max-height: 120px;
+            max-height: 200px;
             overflow-y: auto;
             padding-right: 8px;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-size: 15px;
         }
         .info-value.content::-webkit-scrollbar {
             width: 6px;
@@ -501,8 +502,9 @@
             }
             
             .info-value.content {
-                max-height: 100px;
-                font-size: 14px;
+                max-height: 150px;
+                font-size: 15px;
+                line-height: 1.5;
             }
             
             .video-placeholder {
@@ -699,6 +701,14 @@
             document.getElementById('stats').style.display = 'grid';
             document.getElementById('searchBox').style.display = 'block';
             document.getElementById('filterSection').style.display = 'block';
+            
+            // 确保搜索框获得焦点
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }, 100);
             
             // 初始化图片懒加载
             initLazyLoading();
