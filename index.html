@@ -14,9 +14,9 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 25%, #90caf9 50%, #64b5f6 75%, #42a5f5 100%);
             min-height: 100vh;
-            padding: 30px;
+            padding: 40px 20px;
         }
         .container {
             max-width: 1400px;
@@ -26,18 +26,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
         .logo {
             height: 60px;
             margin-right: 20px;
         }
         h1 {
-            color: white;
+            color: #2d3748;
             text-align: center;
             margin: 0;
             font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            font-weight: 700;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .upload-section {
             background: white;
@@ -53,102 +61,145 @@
         #fileInput {
             width: 100%;
             padding: 15px;
-            border: 2px dashed #667eea;
+            border: 2px dashed #1976d2;
             border-radius: 10px;
-            background: #f8f9ff;
+            background: #e3f2fd;
             cursor: pointer;
             font-size: 16px;
         }
         #fileInput:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
+            border-color: #1565c0;
+            background: #bbdefb;
         }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 25px;
+            margin-bottom: 40px;
         }
         .stat-card {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 30px 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
             text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         }
         .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
         }
         .stat-label {
-            color: #666;
+            color: #718096;
             margin-top: 5px;
+            font-weight: 500;
+            font-size: 0.95rem;
         }
         .works-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(var(--card-width, 320px), 1fr));
-            gap: 35px;
+            gap: 30px;
         }
         .work-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
         }
         .work-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+        }
+        .work-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
         }
         .work-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #2d3748;
+            padding: 18px;
+            position: relative;
+        }
+        .project-school-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(25, 118, 210, 0.9);
             color: white;
-            padding: 30px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1;
         }
         .work-title {
-            font-size: 1.4rem;
-            font-weight: bold;
+            font-size: 1.2rem;
+            font-weight: 700;
             margin-bottom: 10px;
             word-break: break-word;
+            color: #1a202c;
         }
         .work-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            font-size: 0.9rem;
-            opacity: 0.9;
+            gap: 6px;
+            font-size: 0.8rem;
         }
         .meta-tag {
-            background: rgba(255,255,255,0.2);
+            background: rgba(25, 118, 210, 0.1);
+            color: #1976d2;
             padding: 4px 10px;
-            border-radius: 15px;
+            border-radius: 16px;
+            font-weight: 500;
+            border: 1px solid rgba(25, 118, 210, 0.2);
+            font-size: 0.75rem;
         }
         .work-body {
-            padding: 30px;
+            padding: 18px;
         }
         .info-row {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             align-items: flex-start;
         }
         .info-label {
             font-weight: 600;
             color: #555;
-            min-width: 80px;
+            min-width: 70px;
             flex-shrink: 0;
+            font-size: 0.9rem;
         }
         .info-value {
             color: #333;
             flex: 1;
             word-break: break-word;
+            font-size: 0.9rem;
         }
         .info-value.content {
-            max-height: 200px;
+            max-height: 120px;
             overflow-y: auto;
             padding-right: 8px;
-            line-height: 1.6;
-            font-size: 15px;
+            line-height: 1.5;
+            font-size: 14px;
         }
         .info-value.content::-webkit-scrollbar {
             width: 6px;
@@ -165,50 +216,51 @@
             background: #a8a8a8;
         }
         .info-value .location {
-            color: #667eea;
+            color: #1976d2;
             font-weight: 500;
         }
         .work-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 15px 0;
+            gap: 6px;
+            margin: 10px 0;
         }
         .stat-item {
             text-align: center;
-            padding: 10px;
-            background: #f8f9ff;
-            border-radius: 8px;
+            padding: 6px;
+            background: #e3f2fd;
+            border-radius: 6px;
         }
         .stat-item .number {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: bold;
-            color: #667eea;
+            color: #1976d2;
         }
         .stat-item .label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #888;
-            margin-top: 3px;
+            margin-top: 2px;
         }
         .media-section {
-            margin-top: 15px;
+            margin-top: 12px;
         }
         .media-title {
             font-weight: 600;
             color: #555;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
         }
         .images-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 8px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+            margin-bottom: 10px;
         }
         .images-grid img {
             width: 100%;
-            height: 100px;
+            height: 80px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: transform 0.2s;
         }
@@ -217,9 +269,9 @@
         }
         .image-placeholder {
             width: 100%;
-            height: 100px;
+            height: 80px;
             background: #f0f0f0;
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -231,7 +283,7 @@
         }
         .image-placeholder .loading-icon {
             color: #999;
-            font-size: 24px;
+            font-size: 20px;
         }
         .lazy-image {
             opacity: 0;
@@ -252,34 +304,34 @@
         }
         .video-placeholder {
             width: 100%;
-            height: 200px;
+            height: 160px;
             background: #f0f0f0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 6px;
             transition: background-color 0.3s;
         }
         .video-placeholder:hover {
             background: #e0e0e0;
         }
         .video-placeholder .play-icon {
-            width: 60px;
-            height: 60px;
-            background: #667eea;
+            width: 50px;
+            height: 50px;
+            background: #1976d2;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: white;
-            font-size: 24px;
+            font-size: 20px;
         }
         .video-placeholder .play-text {
             color: #666;
-            font-size: 14px;
+            font-size: 12px;
         }
         .no-media {
             color: #999;
@@ -320,19 +372,37 @@
             z-index: 1001;
         }
         .search-box {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
         }
         .search-box input {
             width: 100%;
-            padding: 12px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
+            padding: 16px 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             font-size: 16px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            background: #f8fafc;
         }
         .search-box input:focus {
-            border-color: #667eea;
+            border-color: #1976d2;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+
+        /* 上传按钮样式 */
+        .upload-btn:hover {
+            background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+        
+        .upload-btn:active {
+            transform: translateY(0);
         }
 
         /* 滑块样式 */
@@ -352,7 +422,7 @@
             appearance: none;
             width: 20px;
             height: 20px;
-            background: #667eea;
+            background: #1976d2;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -360,7 +430,7 @@
         }
         
         input[type="range"]::-webkit-slider-thumb:hover {
-            background: #764ba2;
+            background: #1565c0;
             transform: scale(1.1);
         }
         
@@ -374,7 +444,7 @@
         input[type="range"]::-moz-range-thumb {
             width: 20px;
             height: 20px;
-            background: #667eea;
+            background: #1976d2;
             border-radius: 50%;
             cursor: pointer;
             border: none;
@@ -571,11 +641,8 @@
             <h1>腾讯未来教室作品展示平台</h1>
         </div>
         
-        <div class="upload-section">
-            <h2>作品数据</h2>
-            <p style="color: #666; margin-bottom: 15px;">✅ 网页会自动加载Excel文件中的作品数据，您也可以上传新的Excel文件来替换数据</p>
-            <input type="file" id="fileInput" accept=".xlsx,.xls" placeholder="选择Excel文件（可选）">
-        </div>
+        <!-- 隐藏的文件输入 -->
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
 
         <div id="stats" class="stats" style="display:none;">
             <div class="stat-card">
@@ -598,48 +665,53 @@
 
         <div class="search-box" id="searchBox" style="display:none;">
             <input type="text" id="searchInput" placeholder="搜索作品名称、作者、学校、内容...">
-            <div id="searchStatus" style="margin-top: 8px; font-size: 14px; color: rgba(255,255,255,0.8); text-align: center;"></div>
+            <div id="searchStatus" style="margin-top: 8px; font-size: 14px; color: #718096; text-align: center;"></div>
         </div>
 
         <!-- 作品框宽度调整控制器 -->
         <div class="width-control" id="widthControl" style="display:none;">
-            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(10px);">
+            <div style="background: white; padding: 25px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                    <label style="color: white; font-weight: 600; font-size: 16px;">📏 作品框宽度:</label>
+                    <label style="color: #2d3748; font-weight: 600; font-size: 16px;">📏 作品框宽度:</label>
                     <input type="range" id="widthSlider" min="280" max="600" value="320" 
-                           style="flex: 1; min-width: 200px; max-width: 300px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; cursor: pointer;">
-                    <span id="widthValue" style="color: white; font-weight: bold; font-size: 16px; min-width: 60px; text-align: center;">320px</span>
-                    <button onclick="resetWidth()" style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; font-size: 14px;">
+                           style="flex: 1; min-width: 200px; max-width: 300px; height: 6px; background: #e2e8f0; border-radius: 3px; outline: none; cursor: pointer;">
+                    <span id="widthValue" style="color: #2d3748; font-weight: bold; font-size: 16px; min-width: 60px; text-align: center;">320px</span>
+                    <button onclick="resetWidth()" style="padding: 10px 18px; background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
                         🔄 重置
+                    </button>
+                    <button onclick="document.getElementById('fileInput').click();" class="upload-btn" style="padding: 10px 18px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
+                        📁 上传Excel
                     </button>
                 </div>
             </div>
         </div>
         <div class="filter-section" id="filterSection" style="display:none;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
-                <div>
-                    <label for="tagFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按标签筛选:</label>
-                    <select id="tagFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
-                        <option value="">全部标签</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="themeFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按主题筛选:</label>
-                    <select id="themeFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
-                        <option value="">全部主题</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="aiFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按AI结合筛选:</label>
-                    <select id="aiFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
-                        <option value="">全部</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="locationFilter" style="color: white; font-weight: 600; margin-bottom: 8px; display: block;">按IP地点筛选:</label>
-                    <select id="locationFilter" style="width: 100%; padding: 10px 15px; border-radius: 25px; border: 2px solid #e0e0e0; font-size: 16px; outline: none; background: white;">
-                        <option value="">全部地点</option>
-                    </select>
+            <div style="background: white; padding: 25px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    <div>
+                        <label for="tagFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按标签筛选:</label>
+                        <select id="tagFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部标签</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="themeFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按主题筛选:</label>
+                        <select id="themeFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部主题</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="aiFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按AI结合筛选:</label>
+                        <select id="aiFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="locationFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按IP地点筛选:</label>
+                        <select id="locationFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部地点</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -726,6 +798,9 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            // 显示上传提示
+            showUploadStatus('正在处理文件...', 'loading');
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -735,12 +810,72 @@
                     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                     
                     processData(jsonData);
+                    showUploadStatus('✅ 文件上传成功！', 'success');
                 } catch (error) {
-                    alert('读取文件失败，请确保上传的是有效的Excel文件');
+                    showUploadStatus('❌ 文件处理失败，请检查文件格式', 'error');
                     console.error(error);
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+        
+        // 上传状态提示
+        function showUploadStatus(message, type) {
+            // 移除已存在的提示
+            const existingToast = document.querySelector('.upload-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 创建新提示
+            const toast = document.createElement('div');
+            toast.className = 'upload-toast';
+            toast.textContent = message;
+            
+            // 设置样式
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                font-size: 14px;
+                z-index: 1001;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            
+            // 根据类型设置背景色
+            if (type === 'success') {
+                toast.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+            } else if (type === 'error') {
+                toast.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+            } else {
+                toast.style.background = 'linear-gradient(135deg, #1976d2, #1565c0)';
+            }
+            
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // 自动隐藏（除了loading状态）
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }, 3000);
+            }
         }
 
         function processData(data) {
@@ -762,6 +897,21 @@
                 }
                 
                 console.log('表头:', headers);
+                
+                // 调试：检查关键列是否存在
+                const keyColumns = ['用户ip', '主题', 'AI结合'];
+                keyColumns.forEach(col => {
+                    const index = headers.indexOf(col);
+                    if (index >= 0) {
+                        console.log(`✅ 找到列 "${col}" 在第${index + 1}列`);
+                    } else {
+                        console.warn(`❌ 未找到列 "${col}"`);
+                        console.log('可能的相似列名:', headers.filter(h => h && h.includes(col.slice(0, 2))));
+                    }
+                });
+                
+                // 显示所有表头供对比
+                console.log('所有表头列表:', headers.map((h, i) => `第${i+1}列: "${h}"`));
 
                 const fieldMapping = {
                     '姓名': 'name',
@@ -771,13 +921,18 @@
                     '点赞数': 'likes',
                     '评论数': 'comments',
                     '用户ip': 'location',
+                    '用户IP': 'location',  // 添加大写IP的支持
+                    'IP地址': 'location',   // 添加IP地址的支持
                     '创建时间': 'createTime',
                     '图片': 'images',
                     '视频': 'video',
                     '作品名称': 'title',
                     'Tag': 'tags',
                     '主题': 'theme',
-                    'AI结合': 'aiCombined'
+                    'AI结合': 'aiCombined',
+                    'ai结合': 'aiCombined',  // 添加小写ai的支持
+                    'AI': 'aiCombined',       // 添加简写AI的支持
+                    '项目校': 'projectSchool'  // 添加项目校字段
                 };
 
                 allWorks = rows.map((row, index) => {
@@ -791,6 +946,11 @@
                         headers.forEach((header, headerIndex) => {
                             if (fieldMapping[header]) {
                                 work[fieldMapping[header]] = row[headerIndex] || '';
+                                
+                                // 调试：记录关键字段的数据
+                                if (['用户ip', '主题', 'AI结合'].includes(header)) {
+                                    console.log(`第${index + 2}行 ${header}:`, row[headerIndex]);
+                                }
                             }
                         });
 
@@ -1098,6 +1258,8 @@
                         return `
                             <div class="work-card">
                                 <div class="work-header">
+                                    ${work.projectSchool && safeToString(work.projectSchool).trim() ? 
+                                        `<div class="project-school-badge">${escapeHtml(safeToString(work.projectSchool))}</div>` : ''}
                                     <div class="work-title">${escapeHtml(safeToString(work.title))}</div>
                                     <div class="work-meta">
                                         <span class="meta-tag">👤 ${escapeHtml(safeToString(work.name) || '未知')}</span>
@@ -1343,9 +1505,9 @@
             img.className = 'lazy-image';
             img.alt = '作品图片';
             img.style.width = '100%';
-            img.style.height = '100px';
+            img.style.height = '80px';
             img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
+            img.style.borderRadius = '6px';
             img.style.cursor = 'pointer';
             img.style.transition = 'transform 0.2s, opacity 0.3s';
             
