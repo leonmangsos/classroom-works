@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>腾讯未来教室作品展示平台 v2.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="data.js"></script>
@@ -107,8 +108,9 @@
         }
         .works-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(var(--card-width, 320px), 1fr));
+            grid-template-columns: repeat(auto-fill, var(--card-width, 320px));
             gap: 30px;
+            justify-content: center;
         }
         .work-card {
             background: white;
@@ -1318,9 +1320,8 @@
                                     <div class="media-section">
                                         <div class="media-title">🎬 视频</div>
                                         <div class="video-container">
-                                            <div class="video-placeholder" onclick="loadVideo(this, '${escapeHtml(safeToString(work.video))}')">
-                                                <div class="play-icon">▶</div>
-                                                <div class="play-text">点击播放视频</div>
+                                            <div class="video-placeholder" data-video-src="${escapeHtml(safeToString(work.video))}">
+                                                <div class="loading-icon">🎬</div>
                                             </div>
                                         </div>
                                     </div>
@@ -1427,39 +1428,298 @@
             modal.classList.add('active');
         }
 
-        // 懒加载视频函数
-        function loadVideo(placeholder, videoSrc) {
-            // 创建视频元素
+        // 懒加载视频预览函数 - 自动加载视频封面
+        function loadVideoPreview(placeholder) {
+            const videoSrc = placeholder.getAttribute('data-video-src');
+            if (!videoSrc) return;
+            
+            console.log('🎬 开始自动加载视频预览:', videoSrc);
+            
+            // 显示加载状态
+            placeholder.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">
+                    <div style="font-size: 16px; margin-bottom: 8px;">⏳</div>
+                    <div>加载视频预览中...</div>
+                </div>
+            `;
+            
+            // 创建视频元素用于获取第一帧
             const video = document.createElement('video');
-            video.controls = true;
             video.style.width = '100%';
-            video.style.height = 'auto';
-            video.preload = 'metadata'; // 只预加载元数据，不预加载整个视频
+            video.style.height = '80px';
+            video.style.objectFit = 'cover';
+            video.style.borderRadius = '6px';
+            video.style.cursor = 'pointer';
+            video.preload = 'metadata'; // 只预加载元数据
+            video.muted = true; // 静音以避免自动播放限制
+            video.referrerPolicy = 'no-referrer'; // 防止Referer问题
+            video.crossOrigin = 'anonymous'; // 尝试跨域访问
             
             // 创建source元素
             const source = document.createElement('source');
             source.src = videoSrc;
             source.type = 'video/mp4';
-            
             video.appendChild(source);
             
-            // 添加错误处理
-            video.onerror = function() {
-                placeholder.innerHTML = `
-                    <div style="color: #999; text-align: center; padding: 20px;">
-                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
-                        <div>视频加载失败</div>
-                    </div>
-                `;
+            let metadataLoaded = false;
+            let canPlayTriggered = false;
+            
+            // 当视频元数据加载完成时
+            video.onloadedmetadata = function() {
+                console.log('✅ 视频元数据加载完成，时长:', video.duration);
+                metadataLoaded = true;
+                
+                // 跳到第一帧（0.5秒处，确保有内容）
+                video.currentTime = Math.min(0.5, video.duration * 0.1);
+            };
+            
+            // 当视频数据加载完成时
+            video.onloadeddata = function() {
+                console.log('✅ 视频数据加载完成');
+                if (metadataLoaded && !canPlayTriggered) {
+                    createVideoPreview(placeholder, video, videoSrc);
+                    canPlayTriggered = true;
+                }
+            };
+            
+            // 当视频可以播放时
+            video.oncanplay = function() {
+                console.log('✅ 视频可以播放');
+                if (metadataLoaded && !canPlayTriggered) {
+                    createVideoPreview(placeholder, video, videoSrc);
+                    canPlayTriggered = true;
+                }
+            };
+            
+            // 当视频帧更新时（确保显示正确的帧）
+            video.onseeked = function() {
+                console.log('✅ 视频跳转到指定时间:', video.currentTime);
+                if (metadataLoaded && !canPlayTriggered) {
+                    createVideoPreview(placeholder, video, videoSrc);
+                    canPlayTriggered = true;
+                }
+            };
+            
+            // 错误处理
+            video.onerror = function(e) {
+                console.error('❌ 视频预览加载失败:', videoSrc, e);
+                showVideoError(placeholder, videoSrc);
+            };
+            
+            // 添加超时处理，10秒后如果还没加载成功就显示错误
+            setTimeout(() => {
+                if (!canPlayTriggered) {
+                    console.warn('⚠️ 视频预览加载超时:', videoSrc);
+                    showVideoError(placeholder, videoSrc);
+                }
+            }, 10000);
+            
+            // 开始加载
+            video.load();
+        }
+        
+        // 原有的loadVideo函数保持不变，用于手动点击加载
+        function loadVideo(placeholder, videoSrc) {
+            // 这个函数现在主要用于重试等手动操作
+            loadVideoPreview(placeholder);
+        }
+        
+        // 创建视频预览界面
+        function createVideoPreview(placeholder, previewVideo, videoSrc) {
+            console.log('🎬 创建视频预览界面:', videoSrc);
+            
+            const previewContainer = document.createElement('div');
+            previewContainer.style.position = 'relative';
+            previewContainer.style.width = '100%';
+            previewContainer.style.height = '80px';
+            previewContainer.style.borderRadius = '6px';
+            previewContainer.style.overflow = 'hidden';
+            previewContainer.style.cursor = 'pointer';
+            previewContainer.style.transition = 'transform 0.2s';
+            previewContainer.style.backgroundColor = '#f0f0f0'; // 添加背景色以便调试
+            
+            // 添加悬停效果
+            previewContainer.onmouseover = function() {
+                this.style.transform = 'scale(1.05)';
+            };
+            previewContainer.onmouseout = function() {
+                this.style.transform = 'scale(1)';
+            };
+            
+            // 确保视频预览样式正确
+            previewVideo.style.width = '100%';
+            previewVideo.style.height = '100%';
+            previewVideo.style.objectFit = 'cover';
+            previewVideo.style.display = 'block';
+            previewVideo.controls = false; // 隐藏控制条
+            previewVideo.poster = ''; // 清除poster属性
+            
+            // 确保视频显示当前帧
+            previewVideo.pause(); // 确保视频暂停在当前帧
+            
+            // 播放按钮覆盖层
+            const playOverlay = document.createElement('div');
+            playOverlay.style.position = 'absolute';
+            playOverlay.style.top = '0';
+            playOverlay.style.left = '0';
+            playOverlay.style.width = '100%';
+            playOverlay.style.height = '100%';
+            playOverlay.style.background = 'rgba(0, 0, 0, 0.3)';
+            playOverlay.style.display = 'flex';
+            playOverlay.style.alignItems = 'center';
+            playOverlay.style.justifyContent = 'center';
+            playOverlay.style.transition = 'background 0.2s';
+            
+            // 播放图标
+            const playIcon = document.createElement('div');
+            playIcon.innerHTML = '▶️';
+            playIcon.style.fontSize = '24px';
+            playIcon.style.color = 'white';
+            playIcon.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+            
+            // 添加调试信息
+            const debugInfo = document.createElement('div');
+            debugInfo.style.position = 'absolute';
+            debugInfo.style.bottom = '2px';
+            debugInfo.style.left = '2px';
+            debugInfo.style.fontSize = '8px';
+            debugInfo.style.color = 'white';
+            debugInfo.style.background = 'rgba(0,0,0,0.5)';
+            debugInfo.style.padding = '1px 3px';
+            debugInfo.style.borderRadius = '2px';
+            debugInfo.textContent = `${previewVideo.videoWidth}x${previewVideo.videoHeight}`;
+            
+            playOverlay.appendChild(playIcon);
+            previewContainer.appendChild(previewVideo);
+            previewContainer.appendChild(playOverlay);
+            previewContainer.appendChild(debugInfo);
+            
+            // 点击播放视频
+            previewContainer.onclick = function() {
+                console.log('🎬 用户点击播放视频');
+                playFullVideo(previewContainer, videoSrc);
             };
             
             // 替换占位符
-            placeholder.parentNode.replaceChild(video, placeholder);
+            placeholder.parentNode.replaceChild(previewContainer, placeholder);
             
-            // 自动播放（如果浏览器允许）
-            video.play().catch(function(error) {
-                console.log('自动播放被阻止:', error);
+            console.log('✅ 视频预览界面创建完成');
+        }
+        
+        // 播放完整视频
+        function playFullVideo(previewContainer, videoSrc) {
+            console.log('🎬 开始播放完整视频:', videoSrc);
+            
+            // 创建完整的视频播放器
+            const fullVideo = document.createElement('video');
+            fullVideo.controls = true;
+            fullVideo.style.width = '100%';
+            fullVideo.style.height = 'auto';
+            fullVideo.style.borderRadius = '6px';
+            fullVideo.preload = 'auto'; // 现在可以预加载完整视频
+            fullVideo.referrerPolicy = 'no-referrer';
+            
+            const source = document.createElement('source');
+            source.src = videoSrc;
+            source.type = 'video/mp4';
+            fullVideo.appendChild(source);
+            
+            // 错误处理
+            fullVideo.onerror = function() {
+                showVideoError(previewContainer, videoSrc);
+            };
+            
+            // 替换预览为完整播放器
+            previewContainer.parentNode.replaceChild(fullVideo, previewContainer);
+            
+            // 尝试自动播放
+            fullVideo.play().catch(function(error) {
+                console.log('自动播放被阻止，用户需要手动点击播放:', error);
             });
+        }
+        
+        // 显示视频错误
+        function showVideoError(container, videoSrc) {
+            container.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 15px; font-size: 12px; background: #f5f5f5; border-radius: 6px;">
+                    <div style="font-size: 18px; margin-bottom: 5px;">🎬❌</div>
+                    <div style="margin-bottom: 8px;">视频预览失败</div>
+                    <button onclick="retryVideoLoad(this, '${videoSrc.replace(/'/g, "\\'")}');" 
+                            style="padding: 4px 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">
+                        重试
+                    </button>
+                    <button onclick="showVideoFallback(this, '${videoSrc.replace(/'/g, "\\'")}');" 
+                            style="padding: 4px 8px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">
+                        直接播放
+                    </button>
+                    <button onclick="openImageInNewTab('${videoSrc.replace(/'/g, "\\'")}');" 
+                            style="padding: 4px 8px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                        新窗口
+                    </button>
+                </div>
+            `;
+        }
+        
+        // 显示视频备用界面（无预览，直接播放）
+        function showVideoFallback(button, videoSrc) {
+            const container = button.parentNode;
+            
+            // 创建简单的视频播放界面
+            const fallbackContainer = document.createElement('div');
+            fallbackContainer.style.position = 'relative';
+            fallbackContainer.style.width = '100%';
+            fallbackContainer.style.height = '80px';
+            fallbackContainer.style.borderRadius = '6px';
+            fallbackContainer.style.overflow = 'hidden';
+            fallbackContainer.style.cursor = 'pointer';
+            fallbackContainer.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            fallbackContainer.style.display = 'flex';
+            fallbackContainer.style.alignItems = 'center';
+            fallbackContainer.style.justifyContent = 'center';
+            fallbackContainer.style.transition = 'transform 0.2s';
+            
+            // 添加悬停效果
+            fallbackContainer.onmouseover = function() {
+                this.style.transform = 'scale(1.05)';
+            };
+            fallbackContainer.onmouseout = function() {
+                this.style.transform = 'scale(1)';
+            };
+            
+            // 播放图标和文字
+            fallbackContainer.innerHTML = `
+                <div style="text-align: center; color: white;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🎬</div>
+                    <div style="font-size: 12px;">点击播放视频</div>
+                </div>
+            `;
+            
+            // 点击播放视频
+            fallbackContainer.onclick = function() {
+                console.log('🎬 备用方案：直接播放视频');
+                playFullVideo(fallbackContainer, videoSrc);
+            };
+            
+            // 替换错误容器
+            container.parentNode.replaceChild(fallbackContainer, container);
+        }
+        
+        // 重试视频加载
+        function retryVideoLoad(button, videoSrc) {
+            const container = button.parentNode;
+            container.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">
+                    <div style="font-size: 16px; margin-bottom: 8px;">🔄</div>
+                    <div>重新加载中...</div>
+                </div>
+            `;
+            
+            // 重新创建占位符并加载
+            const placeholder = document.createElement('div');
+            placeholder.className = 'video-placeholder';
+            placeholder.setAttribute('data-video-src', videoSrc);
+            container.parentNode.replaceChild(placeholder, container);
+            loadVideoPreview(placeholder);
         }
 
         // 图片懒加载功能
@@ -1477,7 +1737,14 @@
                     entries.forEach(function(entry) {
                         if (entry.isIntersecting) {
                             const placeholder = entry.target;
-                            loadImage(placeholder);
+                            
+                            // 判断是图片还是视频占位符
+                            if (placeholder.classList.contains('image-placeholder')) {
+                                loadImage(placeholder);
+                            } else if (placeholder.classList.contains('video-placeholder')) {
+                                loadVideoPreview(placeholder);
+                            }
+                            
                             imageObserver.unobserve(placeholder);
                         }
                     });
@@ -1486,14 +1753,17 @@
                     threshold: 0.1 // 当10%可见时就开始加载
                 });
                 
-                // 观察所有图片占位符
-                document.querySelectorAll('.image-placeholder').forEach(function(placeholder) {
+                // 观察所有图片和视频占位符
+                document.querySelectorAll('.image-placeholder, .video-placeholder').forEach(function(placeholder) {
                     imageObserver.observe(placeholder);
                 });
             } else {
-                // 如果不支持 Intersection Observer，直接加载所有图片
+                // 如果不支持 Intersection Observer，直接加载所有媒体
                 document.querySelectorAll('.image-placeholder').forEach(function(placeholder) {
                     loadImage(placeholder);
+                });
+                document.querySelectorAll('.video-placeholder').forEach(function(placeholder) {
+                    loadVideoPreview(placeholder);
                 });
             }
             
@@ -1529,8 +1799,10 @@
                 </div>
             `;
             
-            // 先尝试直接加载，如果失败再使用代理
+            // 先尝试直接加载，使用no-referrer策略
             const img = new Image();
+            img.referrerPolicy = 'no-referrer'; // 关键：不发送Referer头
+            
             img.onload = function() {
                 console.log('✅ 直接加载成功:', imgSrc);
                 createImageElement(placeholder, imgSrc, imgSrc);
@@ -1566,18 +1838,19 @@
         // 简化的图片加载机制
         const imageProxyCache = new Map();
         
-        // 更可靠的代理服务列表
+        // 更可靠的代理服务列表 - 针对Referer限制优化
         const imageProxies = [
-            '', // 原始URL - 先尝试直接加载
+            '', // 原始URL - 使用no-referrer策略
             'https://images.weserv.nl/?url=', // 稳定的图片代理服务
+            'https://imageproxy.pimg.tw/resize?url=', // 台湾图片代理
             'https://api.allorigins.win/raw?url=', // 备用代理
-            'https://cors-anywhere.herokuapp.com/', // 需要权限的代理
         ];
         
-        // 快速测试图片是否可加载
+        // 快速测试图片是否可加载 - 使用no-referrer策略
         function testImageLoad(url, timeout = 2000) {
             return new Promise((resolve) => {
                 const testImg = new Image();
+                testImg.referrerPolicy = 'no-referrer'; // 关键：不发送Referer头
                 let resolved = false;
                 
                 const resolveOnce = (result) => {
@@ -1650,7 +1923,7 @@
             }
         }
         
-        // 显示图片错误
+        // 显示图片错误 - 使用no-referrer策略
         function showImageError(placeholder, originalUrl) {
             placeholder.innerHTML = `
                 <div style="color: #999; text-align: center; padding: 15px; font-size: 12px; background: #f5f5f5; border-radius: 6px;">
@@ -1660,12 +1933,23 @@
                             style="padding: 4px 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">
                         重试
                     </button>
-                    <button onclick="window.open('${originalUrl.replace(/'/g, "\\'")}', '_blank')" 
+                    <button onclick="openImageInNewTab('${originalUrl.replace(/'/g, "\\'")}');" 
                             style="padding: 4px 8px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
                         新窗口
                     </button>
                 </div>
             `;
+        }
+        
+        // 在新标签页打开图片 - 使用no-referrer策略
+        function openImageInNewTab(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer'; // 不发送Referer头
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
         
         // 重试图片加载
@@ -1684,11 +1968,12 @@
             loadImageWithProxy(placeholder, originalUrl, proxyIndex);
         }
         
-        // 创建图片元素 - 简化版本
+        // 创建图片元素 - 添加no-referrer策略
         function createImageElement(placeholder, imgSrc, originalUrl) {
             const img = document.createElement('img');
             img.className = 'lazy-image';
             img.alt = '作品图片';
+            img.referrerPolicy = 'no-referrer'; // 关键：不发送Referer头
             img.style.width = '100%';
             img.style.height = '80px';
             img.style.objectFit = 'cover';
@@ -1696,9 +1981,14 @@
             img.style.cursor = 'pointer';
             img.style.transition = 'transform 0.2s, opacity 0.3s';
             
-            // 添加点击事件
+            // 添加点击事件 - 使用no-referrer打开
             img.onclick = function() {
-                openModal(originalUrl);
+                // 创建一个临时链接来打开图片，避免Referer问题
+                const link = document.createElement('a');
+                link.href = originalUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer'; // 不发送Referer
+                link.click();
             };
             
             // 添加悬停效果
