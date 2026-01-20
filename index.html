@@ -1519,10 +1519,30 @@
             const imgSrc = placeholder.getAttribute('data-src');
             if (!imgSrc) return;
             
-            console.log('开始加载图片:', imgSrc);
+            console.log('🚀 开始加载图片:', imgSrc);
             
-            // 使用代理机制加载图片
-            loadImageWithProxy(placeholder, imgSrc);
+            // 显示加载状态
+            placeholder.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">
+                    <div style="font-size: 16px; margin-bottom: 8px;">⏳</div>
+                    <div>加载中...</div>
+                </div>
+            `;
+            
+            // 先尝试直接加载，如果失败再使用代理
+            const img = new Image();
+            img.onload = function() {
+                console.log('✅ 直接加载成功:', imgSrc);
+                createImageElement(placeholder, imgSrc, imgSrc);
+            };
+            
+            img.onerror = function() {
+                console.log('❌ 直接加载失败，尝试代理:', imgSrc);
+                // 直接加载失败，使用代理机制
+                loadImageWithProxy(placeholder, imgSrc);
+            };
+            
+            img.src = imgSrc;
         }
         
         // 重新加载图片的函数
@@ -1543,64 +1563,128 @@
             loadImage(newPlaceholder);
         }
         
-        // 检测图片是否可以正常加载的函数
-        function testImageLoad(url) {
+        // 简化的图片加载机制
+        const imageProxyCache = new Map();
+        
+        // 更可靠的代理服务列表
+        const imageProxies = [
+            '', // 原始URL - 先尝试直接加载
+            'https://images.weserv.nl/?url=', // 稳定的图片代理服务
+            'https://api.allorigins.win/raw?url=', // 备用代理
+            'https://cors-anywhere.herokuapp.com/', // 需要权限的代理
+        ];
+        
+        // 快速测试图片是否可加载
+        function testImageLoad(url, timeout = 2000) {
             return new Promise((resolve) => {
                 const testImg = new Image();
-                testImg.onload = () => resolve(true);
-                testImg.onerror = () => resolve(false);
-                testImg.src = url;
+                let resolved = false;
                 
-                // 5秒超时
-                setTimeout(() => resolve(false), 5000);
+                const resolveOnce = (result) => {
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(result);
+                    }
+                };
+                
+                testImg.onload = () => resolveOnce(true);
+                testImg.onerror = () => resolveOnce(false);
+                
+                // 缩短超时到2秒
+                setTimeout(() => resolveOnce(false), timeout);
+                
+                testImg.src = url;
             });
         }
         
-        // 图片代理服务列表（免费的CORS代理）
-        const imageProxies = [
-            '', // 原始URL
-            'https://cors-anywhere.herokuapp.com/', // 需要临时访问权限
-            'https://api.allorigins.win/raw?url=', // 备用代理
-            'https://corsproxy.io/?', // 另一个代理服务
-        ];
-        
-        // 尝试通过代理加载图片
-        async function loadImageWithProxy(placeholder, originalUrl, proxyIndex = 0) {
-            if (proxyIndex >= imageProxies.length) {
-                // 所有代理都失败，显示最终错误
-                placeholder.innerHTML = `
-                    <div style="color: #999; text-align: center; padding: 15px; font-size: 12px; background: #f5f5f5; border-radius: 6px;">
-                        <div style="font-size: 18px; margin-bottom: 5px;">🚫</div>
-                        <div style="margin-bottom: 8px;">图片无法加载</div>
-                        <div style="margin-bottom: 8px; font-size: 10px; color: #666;">跨域限制</div>
-                        <button onclick="window.open('${originalUrl.replace(/'/g, "\\'")}', '_blank')" 
-                                style="padding: 4px 8px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                            新窗口查看
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-            
-            const proxyUrl = imageProxies[proxyIndex] + (proxyIndex === 0 ? '' : encodeURIComponent(originalUrl));
-            const currentUrl = proxyIndex === 0 ? originalUrl : proxyUrl;
-            
-            console.log(`尝试加载图片 (代理 ${proxyIndex + 1}/${imageProxies.length}):`, currentUrl);
-            
-            // 测试当前代理是否可用
-            const canLoad = await testImageLoad(currentUrl);
-            
-            if (canLoad) {
-                // 成功，创建真正的图片元素
-                createImageElement(placeholder, currentUrl, originalUrl);
-            } else {
-                // 失败，尝试下一个代理
-                console.warn(`代理 ${proxyIndex + 1} 失败，尝试下一个...`);
-                loadImageWithProxy(placeholder, originalUrl, proxyIndex + 1);
+        // 获取域名
+        function getDomain(url) {
+            try {
+                return new URL(url).hostname;
+            } catch {
+                return url.split('/')[2] || url;
             }
         }
         
-        // 创建图片元素
+        // 简化的代理加载
+        async function loadImageWithProxy(placeholder, originalUrl, proxyIndex = 0) {
+            // 检查缓存
+            const domain = getDomain(originalUrl);
+            const cachedProxyIndex = imageProxyCache.get(domain);
+            if (cachedProxyIndex !== undefined && proxyIndex === 0) {
+                console.log(`使用缓存代理 ${cachedProxyIndex + 1}:`, originalUrl);
+                proxyIndex = cachedProxyIndex;
+            }
+            
+            if (proxyIndex >= imageProxies.length) {
+                // 所有代理都失败
+                showImageError(placeholder, originalUrl);
+                return;
+            }
+            
+            const proxy = imageProxies[proxyIndex];
+            const testUrl = proxy ? proxy + encodeURIComponent(originalUrl) : originalUrl;
+            
+            console.log(`尝试代理 ${proxyIndex + 1}/${imageProxies.length}:`, testUrl);
+            
+            try {
+                const canLoad = await testImageLoad(testUrl);
+                
+                if (canLoad) {
+                    // 成功 - 缓存并创建图片
+                    imageProxyCache.set(domain, proxyIndex);
+                    console.log(`代理 ${proxyIndex + 1} 成功`);
+                    createImageElement(placeholder, testUrl, originalUrl);
+                } else {
+                    // 失败 - 尝试下一个代理
+                    console.log(`代理 ${proxyIndex + 1} 失败，尝试下一个`);
+                    setTimeout(() => {
+                        loadImageWithProxy(placeholder, originalUrl, proxyIndex + 1);
+                    }, 200);
+                }
+            } catch (error) {
+                console.error('代理测试出错:', error);
+                setTimeout(() => {
+                    loadImageWithProxy(placeholder, originalUrl, proxyIndex + 1);
+                }, 200);
+            }
+        }
+        
+        // 显示图片错误
+        function showImageError(placeholder, originalUrl) {
+            placeholder.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 15px; font-size: 12px; background: #f5f5f5; border-radius: 6px;">
+                    <div style="font-size: 18px; margin-bottom: 5px;">❌</div>
+                    <div style="margin-bottom: 8px;">加载失败</div>
+                    <button onclick="retryImageLoad(this, '${originalUrl.replace(/'/g, "\\'")}', 0)" 
+                            style="padding: 4px 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 5px;">
+                        重试
+                    </button>
+                    <button onclick="window.open('${originalUrl.replace(/'/g, "\\'")}', '_blank')" 
+                            style="padding: 4px 8px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                        新窗口
+                    </button>
+                </div>
+            `;
+        }
+        
+        // 重试图片加载
+        function retryImageLoad(button, originalUrl, proxyIndex) {
+            const placeholder = button.parentNode;
+            placeholder.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">
+                    <div style="font-size: 16px; margin-bottom: 8px;">🔄</div>
+                    <div>重新加载中...</div>
+                </div>
+            `;
+            
+            // 清除缓存，重新尝试
+            const domain = getDomain(originalUrl);
+            imageProxyCache.delete(domain);
+            loadImageWithProxy(placeholder, originalUrl, proxyIndex);
+        }
+        
+        // 创建图片元素 - 简化版本
         function createImageElement(placeholder, imgSrc, originalUrl) {
             const img = document.createElement('img');
             img.className = 'lazy-image';
@@ -1612,7 +1696,7 @@
             img.style.cursor = 'pointer';
             img.style.transition = 'transform 0.2s, opacity 0.3s';
             
-            // 添加点击事件 - 点击时打开原始图片
+            // 添加点击事件
             img.onclick = function() {
                 openModal(originalUrl);
             };
@@ -1627,27 +1711,19 @@
             
             // 图片加载完成
             img.onload = function() {
-                img.classList.add('loaded');
-                console.log('图片加载成功:', imgSrc);
+                console.log('✅ 图片加载成功:', imgSrc);
+                img.style.opacity = '1';
             };
             
-            // 图片加载失败
+            // 图片加载失败的兜底处理
             img.onerror = function() {
-                console.warn('图片最终加载失败:', imgSrc);
-                placeholder.innerHTML = `
-                    <div style="color: #999; text-align: center; padding: 15px; font-size: 12px; background: #f5f5f5; border-radius: 6px;">
-                        <div style="font-size: 18px; margin-bottom: 5px;">❌</div>
-                        <div style="margin-bottom: 8px;">加载失败</div>
-                        <button onclick="window.open('${originalUrl.replace(/'/g, "\\'")}', '_blank')" 
-                                style="padding: 4px 8px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                            新窗口查看
-                        </button>
-                    </div>
-                `;
+                console.error('❌ 图片加载失败:', imgSrc);
+                showImageError(placeholder, originalUrl);
             };
             
-            img.src = imgSrc;
+            // 立即替换并开始加载
             placeholder.parentNode.replaceChild(img, placeholder);
+            img.src = imgSrc;
         }
 
         document.getElementById('imageModal').addEventListener('click', function() {
