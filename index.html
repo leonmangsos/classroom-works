@@ -992,6 +992,24 @@
                 updateStats();
                 populateTagFilter();
                 
+                // 设置默认筛选：第六届腾讯未来战队科创成长营-科技赛道
+                setTimeout(() => {
+                    const tagFilter = document.getElementById('tagFilter');
+                    const defaultTag = '第六届腾讯未来战队科创成长营-科技赛道';
+                    
+                    // 检查是否存在该标签选项
+                    const options = Array.from(tagFilter.options);
+                    const targetOption = options.find(option => option.value === defaultTag);
+                    
+                    if (targetOption) {
+                        tagFilter.value = defaultTag;
+                        filterWorks(); // 应用筛选
+                        console.log('已自动筛选到:', defaultTag);
+                    } else {
+                        console.log('未找到默认标签:', defaultTag, '可用标签:', options.map(o => o.value));
+                    }
+                }, 100);
+                
                 document.getElementById('stats').style.display = 'grid';
                 document.getElementById('searchBox').style.display = 'block';
                 document.getElementById('filterSection').style.display = 'block';
