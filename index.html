@@ -27,11 +27,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 20px 15px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
         }
         .logo {
             height: 60px;
@@ -75,36 +75,40 @@
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         .stat-card {
             background: white;
-            padding: 30px 25px;
+            padding: 20px 15px;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.08);
             text-align: center;
             transition: all 0.3s ease;
             border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px;
         }
         .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
         }
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             font-weight: 800;
             background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .stat-label {
             color: #718096;
-            margin-top: 5px;
+            margin-top: 0;
             font-weight: 500;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
         }
         .works-grid {
             display: grid;
@@ -119,10 +123,19 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border: 1px solid rgba(255,255,255,0.2);
             position: relative;
+            /* 修复文字模糊问题 */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+            will-change: transform;
         }
         .work-card:hover {
             transform: translateY(-12px) scale(1.02);
             box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+            /* 确保文字清晰 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .work-card::before {
             content: '';
@@ -219,6 +232,82 @@
         .info-value .location {
             color: #1976d2;
             font-weight: 500;
+        }
+        
+        /* 混元AI总结按钮样式 */
+        .ai-summary-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
+            white-space: nowrap;
+        }
+        
+        .ai-summary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.35);
+        }
+        
+        .ai-summary-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .ai-summary-btn .logo {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        
+        .ai-summary-content {
+            background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+            border: 1px solid #e0e7ff;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #374151;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            /* 修复文字模糊问题 */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .ai-summary-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .ai-summary-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .work-stats {
             display: grid;
@@ -463,7 +552,8 @@
                     flex-direction: column;
                     align-items: center;
                     text-align: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 15px;
+                    padding: 15px 10px;
                 }
                 
                 .logo {
@@ -486,7 +576,7 @@
             .stats {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 15px;
-                margin-bottom: 20px;
+                margin-bottom: 15px;
             }
             
             .stat-card {
@@ -577,7 +667,8 @@
                 }
                 
                 .header {
-                    margin-bottom: 15px;
+                    margin-bottom: 10px;
+                    padding: 12px 8px;
                 }
                 
                 .logo {
@@ -1267,12 +1358,15 @@
             }
 
             try {
-                grid.innerHTML = displayedWorks.map(work => {
+                grid.innerHTML = displayedWorks.map((work, index) => {
                     // 确保work对象有效
                     if (!work || typeof work !== 'object') {
                         console.warn('渲染时发现无效作品对象:', work);
                         return '';
                     }
+                    
+                    // 使用索引生成唯一ID
+                    const workId = `work_${index}`;
                     
                     try {
                         return `
@@ -1317,7 +1411,15 @@
                                     ` : ''}
                                     <div class="info-row">
                                         <div class="info-label">内容:</div>
-                                        <div class="info-value content">${escapeHtml(safeToString(work.content) || '暂无内容')}</div>
+                                        <div class="info-value content" id="content-${workId}">${escapeHtml(safeToString(work.content) || '暂无内容')}</div>
+                                    </div>
+                                    
+                                    <!-- 混元AI总结按钮 -->
+                                    <div style="text-align: center; margin: 15px 0;">
+                                        <button class="ai-summary-btn" onclick="toggleAISummary('${workId}', ${index})">
+                                            <img src="混元LOGO.webp" alt="混元AI" class="logo">
+                                            <span class="btn-text">查看混元AI总结</span>
+                                        </button>
                                     </div>
                                     
                                     ${work.imageUrls && work.imageUrls.length > 0 ? `
@@ -2083,6 +2185,208 @@
             setTimeout(() => {
                 worksGrid.style.transition = '';
             }, 300);
+        }
+
+        // 混元AI总结功能
+        const aiSummaryCache = new Map(); // 缓存AI总结结果
+        
+        async function toggleAISummary(workId, workIndex) {
+            const contentElement = document.getElementById(`content-${workId}`);
+            const button = event.target.closest('.ai-summary-btn');
+            const btnText = button.querySelector('.btn-text');
+            
+            // 从displayedWorks数组中获取作品数据
+            const work = displayedWorks[workIndex];
+            if (!work) {
+                console.error('未找到作品数据，索引:', workIndex);
+                return;
+            }
+            
+            const title = safeToString(work.title);
+            const content = safeToString(work.content) || '';
+            const theme = safeToString(work.theme) || '';
+            const aiCombined = safeToString(work.aiCombined) || '';
+            
+            console.log('处理作品:', title, '索引:', workIndex); // 调试日志
+            
+            // 如果当前作品已经显示AI总结，则隐藏
+            if (contentElement.querySelector('.ai-summary-content')) {
+                hideAISummary(workId);
+                return;
+            }
+            
+            // 检查缓存，如果有缓存直接显示
+            if (aiSummaryCache.has(workId)) {
+                showAISummary(workId, aiSummaryCache.get(workId));
+                return;
+            }
+            
+            // 显示加载状态
+            button.disabled = true;
+            btnText.textContent = '生成中...';
+            
+            // 在内容区域显示加载动画
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'ai-summary-content ai-summary-loading';
+            loadingDiv.innerHTML = `
+                <div class="spinner"></div>
+                <span>混元AI正在分析作品内容...</span>
+            `;
+            contentElement.appendChild(loadingDiv);
+            
+            try {
+                // 构建提示词
+                const prompt = `请对以下学生作品进行专业总结分析：
+
+作品名称：${title}
+作品内容：${content}
+主题分类：${theme}
+AI技术结合：${aiCombined}
+
+请从以下几个维度进行总结：
+1. 作品核心亮点和创新点
+2. 技术实现特色
+3. 教育价值和意义
+4. 可改进的建议
+
+要求：语言简洁专业，突出作品特色，字数控制在200字以内。`;
+
+                // 调用混元AI API
+                const summary = await callHunyuanAPI(prompt);
+                
+                // 缓存结果
+                aiSummaryCache.set(workId, summary);
+                
+                // 移除加载动画
+                loadingDiv.remove();
+                
+                // 显示AI总结
+                showAISummary(workId, summary);
+                
+            } catch (error) {
+                console.error('AI总结生成失败:', error);
+                
+                // 移除加载动画
+                loadingDiv.remove();
+                
+                // 显示错误信息
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'ai-summary-content';
+                errorDiv.style.color = '#ef4444';
+                errorDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>⚠️</span>
+                        <span>AI总结生成失败，请稍后重试</span>
+                    </div>
+                    <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">
+                        错误信息: ${error.message}
+                    </div>
+                `;
+                contentElement.appendChild(errorDiv);
+                
+                // 3秒后自动移除错误信息
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 3000);
+                
+                // 错误情况下重置按钮文字
+                btnText.textContent = '查看混元AI总结';
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                // 不在这里重置按钮文字，让showAISummary函数来处理
+            }
+        }
+        
+        function showAISummary(workId, summary) {
+            const contentElement = document.getElementById(`content-${workId}`);
+            const button = findButtonByWorkId(workId);
+            const btnText = button.querySelector('.btn-text');
+            
+            // 隐藏原始内容
+            const originalContent = contentElement.innerHTML;
+            contentElement.setAttribute('data-original-content', originalContent);
+            
+            // 显示AI总结
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'ai-summary-content';
+            summaryDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 600; color: #667eea; font-size: 12px;">
+                    <img src="混元LOGO.webp" alt="混元AI" style="width: 16px; height: 16px; border-radius: 3px;">
+                    <span>混元AI智能总结</span>
+                </div>
+                <div style="white-space: pre-wrap;">${summary}</div>
+            `;
+            
+            contentElement.innerHTML = '';
+            contentElement.appendChild(summaryDiv);
+            
+            // 更新按钮文本
+            btnText.textContent = '隐藏AI总结';
+        }
+        
+        function hideAISummary(workId) {
+            const contentElement = document.getElementById(`content-${workId}`);
+            const button = findButtonByWorkId(workId);
+            const btnText = button.querySelector('.btn-text');
+            
+            // 恢复原始内容
+            const originalContent = contentElement.getAttribute('data-original-content');
+            if (originalContent) {
+                contentElement.innerHTML = originalContent;
+                contentElement.removeAttribute('data-original-content');
+            }
+            
+            // 更新按钮文本
+            btnText.textContent = '查看混元AI总结';
+        }
+        
+        // 根据workId找到对应的按钮
+        function findButtonByWorkId(workId) {
+            const contentElement = document.getElementById(`content-${workId}`);
+            return contentElement.closest('.work-card').querySelector('.ai-summary-btn');
+        }
+        
+        // 调用腾讯混元AI API
+        async function callHunyuanAPI(prompt) {
+            const response = await fetch('https://yuanqi.tencent.com/openapi/v1/agent/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'X-Source': 'openapi',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer l4E92i5NtT5mqt2SzZ7LczBzqX7Cub1d'
+                },
+                body: JSON.stringify({
+                    assistant_id: 'Ug52e1fXoHna',
+                    user_id: 'user_' + Date.now(), // 使用时间戳作为用户ID
+                    stream: false,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: prompt
+                                }
+                            ]
+                        }
+                    ]
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API调用失败: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.choices && data.choices.length > 0) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error('API返回数据格式异常');
+            }
         }
 
         // 安全的字符串转换函数 - 增强版
