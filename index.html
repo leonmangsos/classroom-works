@@ -187,6 +187,35 @@
             border: 1px solid rgba(25, 118, 210, 0.2);
             font-size: 0.75rem;
         }
+        
+        /* 获奖标签特殊样式 */
+        .award-tag {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+            color: #b8860b;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+        
+        .award-tag.gold {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+            color: #b8860b;
+        }
+        
+        .award-tag.silver {
+            background: linear-gradient(135deg, #c0c0c0 0%, #a8a8a8 100%);
+            color: #696969;
+        }
+        
+        .award-tag.bronze {
+            background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%);
+            color: #8b4513;
+        }
+        
+        .award-tag.popularity {
+            background: linear-gradient(135deg, #ffb3b3 0%, #ff9999 100%);
+            color: #d63384;
+        }
         .work-body {
             padding: 18px;
         }
@@ -807,6 +836,12 @@
                             <option value="">全部地点</option>
                         </select>
                     </div>
+                    <div>
+                        <label for="awardFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按获奖情况筛选:</label>
+                        <select id="awardFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部作品</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -994,7 +1029,7 @@
                 console.log('表头:', headers);
                 
                 // 调试：检查关键列是否存在
-                const keyColumns = ['用户ip', '主题', 'AI结合'];
+                const keyColumns = ['用户ip', '主题', 'AI结合', '获奖情况'];
                 keyColumns.forEach(col => {
                     const index = headers.indexOf(col);
                     if (index >= 0) {
@@ -1027,7 +1062,8 @@
                     'AI结合': 'aiCombined',
                     'ai结合': 'aiCombined',  // 添加小写ai的支持
                     'AI': 'aiCombined',       // 添加简写AI的支持
-                    '项目校': 'projectSchool'  // 添加项目校字段
+                    '项目校': 'projectSchool',  // 添加项目校字段
+                    '获奖情况': 'award'        // 添加获奖情况字段
                 };
 
                 allWorks = rows.map((row, index) => {
@@ -1145,6 +1181,7 @@
             const themeMap = new Map();
             const aiMap = new Map();
             const locationMap = new Map();
+            const awardMap = new Map();
             
             allWorks.forEach(work => {
                 // 处理Tag
@@ -1168,6 +1205,12 @@
                 // 处理IP地点
                 if (work.location) {
                     locationMap.set(work.location.trim(), (locationMap.get(work.location.trim()) || 0) + 1);
+                }
+                
+                // 处理获奖情况
+                const award = safeToString(work.award || work['获奖情况'] || '').trim();
+                if (award) {
+                    awardMap.set(award, (awardMap.get(award) || 0) + 1);
                 }
             });
             
@@ -1211,11 +1254,45 @@
                 locationFilter.appendChild(option);
             });
             
+            // 填充获奖情况筛选
+            const awardFilter = document.getElementById('awardFilter');
+            awardFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            // 添加特殊选项
+            const hasAwardCount = allWorks.filter(work => {
+                const award = safeToString(work.award || work['获奖情况'] || '').trim();
+                return award !== '';
+            }).length;
+            const noAwardCount = allWorks.length - hasAwardCount;
+            
+            if (hasAwardCount > 0) {
+                const hasAwardOption = document.createElement('option');
+                hasAwardOption.value = '__HAS_AWARD__';
+                hasAwardOption.textContent = `获奖作品 (${hasAwardCount})`;
+                awardFilter.appendChild(hasAwardOption);
+            }
+            
+            if (noAwardCount > 0) {
+                const noAwardOption = document.createElement('option');
+                noAwardOption.value = '__NO_AWARD__';
+                noAwardOption.textContent = `未获奖作品 (${noAwardCount})`;
+                awardFilter.appendChild(noAwardOption);
+            }
+            
+            // 添加具体奖项
+            Array.from(awardMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([award, count]) => {
+                const option = document.createElement('option');
+                option.value = award;
+                option.textContent = `${award} (${count})`;
+                awardFilter.appendChild(option);
+            });
+            
             // 保存所有选项数据
             window.allTagOptions = Array.from(tagMap.entries());
             window.allThemeOptions = Array.from(themeMap.entries());
             window.allAiOptions = Array.from(aiMap.entries());
             window.allLocationOptions = Array.from(locationMap.entries());
+            window.allAwardOptions = Array.from(awardMap.entries());
         }
 
         function updateFilterOptions() {
@@ -1367,8 +1444,9 @@
                         return '';
                     }
                     
-                    // 使用索引生成唯一ID
-                    const workId = `work_${index}`;
+                    // 使用作品的唯一标识生成ID（使用title+name的组合，确保唯一性和稳定性）
+                    const uniqueKey = (safeToString(work.title) + '_' + safeToString(work.name)).substring(0, 50);
+                    const workId = `work_${uniqueKey.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${index}`;
                     
                     try {
                         return `
@@ -1383,6 +1461,7 @@
                                         ${work.tags ? `<span class="meta-tag">🏷️ ${escapeHtml(safeToString(work.tags))}</span>` : ''}
                                         ${work.theme ? `<span class="meta-tag">🎯 ${escapeHtml(safeToString(work.theme))}</span>` : ''}
                                         ${work.aiCombined ? `<span class="meta-tag">🤖 AI: ${escapeHtml(safeToString(work.aiCombined))}</span>` : ''}
+                                        ${getAwardTag(work)}
                                     </div>
                                 </div>
                                 <div class="work-body">
@@ -1418,7 +1497,7 @@
                                     
                                     <!-- 混元AI总结按钮 -->
                                     <div style="text-align: center; margin: 15px 0;">
-                                        <button class="ai-summary-btn" onclick="toggleAISummary('${workId}', ${index})">
+                                        <button class="ai-summary-btn" onclick="toggleAISummary('${workId}', '${escapeHtml(safeToString(work.title))}', '${escapeHtml(safeToString(work.name))}')">
                                             <img src="混元LOGO.webp" alt="混元AI" class="logo">
                                             <span class="btn-text">查看混元AI总结</span>
                                         </button>
@@ -1496,6 +1575,38 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // 生成获奖标签
+        function getAwardTag(work) {
+            const award = safeToString(work.award || work['获奖情况'] || '').trim();
+            
+            // 调试：输出获奖情况
+            if (award) {
+                console.log('发现获奖作品:', work.title, '获奖情况:', award);
+            }
+            
+            if (!award) return ''; // 没有获奖情况就不显示标签
+            
+            let awardClass = 'award-tag';
+            let awardIcon = '🏆';
+            
+            // 根据获奖情况设置不同的样式和图标
+            if (award.includes('金') || award.toLowerCase().includes('gold')) {
+                awardClass += ' gold';
+                awardIcon = '🥇';
+            } else if (award.includes('银') || award.toLowerCase().includes('silver')) {
+                awardClass += ' silver';
+                awardIcon = '🥈';
+            } else if (award.includes('铜') || award.toLowerCase().includes('bronze')) {
+                awardClass += ' bronze';
+                awardIcon = '🥉';
+            } else if (award.includes('人气') || award.toLowerCase().includes('popular')) {
+                awardClass += ' popularity';
+                awardIcon = '❤️';
+            }
+            
+            return `<span class="meta-tag ${awardClass}">${awardIcon} ${escapeHtml(award)}</span>`;
         }
 
         function formatDateTime(dateStr) {
@@ -2150,6 +2261,7 @@
         document.getElementById('themeFilter').addEventListener('change', filterWorks);
         document.getElementById('aiFilter').addEventListener('change', filterWorks);
         document.getElementById('locationFilter').addEventListener('change', filterWorks);
+        document.getElementById('awardFilter').addEventListener('change', filterWorks);
 
         // 宽度控制功能
         function initWidthControl() {
@@ -2192,15 +2304,18 @@
         // 混元AI总结功能
         const aiSummaryCache = new Map(); // 缓存AI总结结果
         
-        async function toggleAISummary(workId, workIndex) {
+        async function toggleAISummary(workId, workTitle, workName) {
             const contentElement = document.getElementById(`content-${workId}`);
             const button = event.target.closest('.ai-summary-btn');
             const btnText = button.querySelector('.btn-text');
             
-            // 从displayedWorks数组中获取作品数据
-            const work = displayedWorks[workIndex];
+            // 从displayedWorks数组中通过title和name查找作品数据
+            const work = displayedWorks.find(w => 
+                safeToString(w.title) === workTitle && safeToString(w.name) === workName
+            );
+            
             if (!work) {
-                console.error('未找到作品数据，索引:', workIndex);
+                console.error('未找到作品数据，标题:', workTitle, '姓名:', workName);
                 return;
             }
             
@@ -2209,7 +2324,7 @@
             const theme = safeToString(work.theme) || '';
             const aiCombined = safeToString(work.aiCombined) || '';
             
-            console.log('处理作品:', title, '索引:', workIndex); // 调试日志
+            console.log('处理作品:', title, '作者:', workName); // 调试日志
             
             // 如果当前作品已经显示AI总结，则隐藏
             if (contentElement.querySelector('.ai-summary-content')) {
@@ -2419,9 +2534,10 @@ AI技术结合：${aiCombined}
             const themeFilter = document.getElementById('themeFilter').value;
             const aiFilter = document.getElementById('aiFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;
+            const awardFilter = document.getElementById('awardFilter').value;
             
             // 简化日志输出，避免显示Object
-            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter);
+            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter, '获奖:', awardFilter);
             console.log('总作品数:', allWorks.length);
             
             displayedWorks = allWorks.filter(work => {
@@ -2500,14 +2616,32 @@ AI技术结合：${aiCombined}
                     }
                 }
                 
-                return matchSearch && matchTag && matchTheme && matchAI && matchLocation;
+                // 获奖情况过滤
+                let matchAward = true;
+                if (awardFilter) {
+                    try {
+                        const award = safeToString(work.award || work['获奖情况'] || '').trim();
+                        if (awardFilter === '__HAS_AWARD__') {
+                            matchAward = award !== '';
+                        } else if (awardFilter === '__NO_AWARD__') {
+                            matchAward = award === '';
+                        } else {
+                            matchAward = award === awardFilter;
+                        }
+                    } catch (error) {
+                        console.error('获奖过滤出错:', error, work);
+                        matchAward = false;
+                    }
+                }
+                
+                return matchSearch && matchTag && matchTheme && matchAI && matchLocation && matchAward;
             });
             
             console.log('筛选后作品数:', displayedWorks.length);
             
             // 更新搜索状态显示
             const searchStatus = document.getElementById('searchStatus');
-            if (query || tagFilter || themeFilter || aiFilter || locationFilter) {
+            if (query || tagFilter || themeFilter || aiFilter || locationFilter || awardFilter) {
                 const totalWorks = allWorks.length;
                 const filteredWorks = displayedWorks.length;
                 searchStatus.textContent = `找到 ${filteredWorks} 个作品（共 ${totalWorks} 个）`;
