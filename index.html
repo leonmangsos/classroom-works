@@ -800,6 +800,9 @@
                     <button onclick="document.getElementById('fileInput').click();" class="upload-btn" style="padding: 10px 18px; background: #e3f2fd; color: #1976d2; border: 2px solid #bbdefb; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
                         📁 上传Excel
                     </button>
+                    <button onclick="exportFilteredData();" class="export-btn" style="padding: 10px 18px; background: #e8f5e8; color: #2e7d32; border: 2px solid #c8e6c9; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
+                        📊 导出筛选
+                    </button>
                 </div>
             </div>
         </div>
@@ -1010,6 +1013,117 @@
                         }
                     }, 300);
                 }, 3000);
+            }
+        }
+
+        // 导出当前筛选的数据为Excel
+        function exportFilteredData() {
+            if (!displayedWorks || displayedWorks.length === 0) {
+                showUploadStatus('❌ 没有可导出的数据', 'error');
+                return;
+            }
+
+            try {
+                showUploadStatus('正在生成Excel文件...', 'loading');
+
+                // 准备导出数据，使用原始Excel的列结构
+                const exportData = [];
+                
+                // 添加表头（与原Excel保持一致）
+                const headers = [
+                    '序号', '标题', '作者', '学校', '分类', '主题', '图片链接', '视频链接', 
+                    '描述', '获奖情况', '项目校', 'IP地址', 'AI结合'
+                ];
+                exportData.push(headers);
+
+                // 添加筛选后的数据
+                displayedWorks.forEach((work, index) => {
+                    const row = [
+                        index + 1, // 重新编号
+                        safeToString(work.title),
+                        safeToString(work.name),
+                        safeToString(work.school),
+                        safeToString(work.tags),
+                        safeToString(work.theme),
+                        safeToString(work.images), // 使用原始的images字段，包含完整的图片链接信息
+                        safeToString(work.video),
+                        safeToString(work.content),
+                        safeToString(work.award),
+                        safeToString(work.projectSchool),
+                        safeToString(work.location),
+                        safeToString(work.aiCombined)
+                    ];
+                    exportData.push(row);
+                });
+
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+                // 设置列宽
+                const colWidths = [
+                    { wch: 6 },   // 序号
+                    { wch: 25 },  // 标题
+                    { wch: 12 },  // 作者
+                    { wch: 20 },  // 学校
+                    { wch: 15 },  // 分类
+                    { wch: 15 },  // 主题
+                    { wch: 30 },  // 图片链接
+                    { wch: 30 },  // 视频链接
+                    { wch: 40 },  // 描述
+                    { wch: 15 },  // 获奖情况
+                    { wch: 15 },  // 项目校
+                    { wch: 15 },  // IP地址
+                    { wch: 20 }   // AI结合
+                ];
+                ws['!cols'] = colWidths;
+
+                // 添加工作表到工作簿
+                XLSX.utils.book_append_sheet(wb, ws, '筛选结果');
+
+                // 生成文件名（包含当前筛选条件和时间戳）
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+                
+                // 获取当前筛选条件
+                const searchQuery = document.getElementById('searchInput').value.trim();
+                const tagFilter = document.getElementById('tagFilter').value;
+                const themeFilter = document.getElementById('themeFilter').value;
+                const aiFilter = document.getElementById('aiFilter').value;
+                const locationFilter = document.getElementById('locationFilter').value;
+                
+                let filterDesc = '';
+                const filters = [];
+                if (searchQuery) filters.push(`搜索_${searchQuery}`);
+                if (tagFilter) filters.push(`标签_${tagFilter}`);
+                if (themeFilter) filters.push(`主题_${themeFilter}`);
+                if (aiFilter) {
+                    if (aiFilter === '__HAS_AI__') filters.push('有AI');
+                    else if (aiFilter === '__NO_AI__') filters.push('没AI');
+                    else filters.push(`AI_${aiFilter}`);
+                }
+                if (locationFilter) filters.push(`地点_${locationFilter}`);
+                
+                if (filters.length > 0) {
+                    filterDesc = '_' + filters.join('_');
+                }
+
+                const filename = `作品筛选结果${filterDesc}_${timestamp}.xlsx`;
+
+                // 下载文件
+                XLSX.writeFile(wb, filename);
+
+                showUploadStatus(`✅ 导出成功！共 ${displayedWorks.length} 条记录`, 'success');
+                
+                console.log('导出完成:', {
+                    filename: filename,
+                    records: displayedWorks.length,
+                    filters: filters
+                });
+
+            } catch (error) {
+                console.error('导出失败:', error);
+                showUploadStatus('❌ 导出失败，请重试', 'error');
             }
         }
 
