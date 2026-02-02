@@ -6,7 +6,6 @@
     <meta name="referrer" content="no-referrer">
     <title>腾讯未来教室作品展示平台 v2.1</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="data.js"></script>
     <style>
         * {
             margin: 0;
@@ -842,6 +841,12 @@
                             <option value="">全部作品</option>
                         </select>
                     </div>
+                    <div>
+                        <label for="projectSchoolFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按项目校筛选:</label>
+                        <select id="projectSchoolFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
+                            <option value="">全部项目校</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1036,7 +1041,7 @@
                         console.log(`✅ 找到列 "${col}" 在第${index + 1}列`);
                     } else {
                         console.warn(`❌ 未找到列 "${col}"`);
-                        console.log('可能的相似列名:', headers.filter(h => h && h.includes(col.slice(0, 2))));
+                        console.log('可能的相似列名:', headers.filter(h => h && (h.includes(col.slice(0, 2)) || h.toLowerCase().includes('ai'))));
                     }
                 });
                 
@@ -1062,6 +1067,10 @@
                     'AI结合': 'aiCombined',
                     'ai结合': 'aiCombined',  // 添加小写ai的支持
                     'AI': 'aiCombined',       // 添加简写AI的支持
+                    'AI应用': 'aiCombined',   // 添加AI应用的支持
+                    'AI工具': 'aiCombined',   // 添加AI工具的支持
+                    'AI技术': 'aiCombined',   // 添加AI技术的支持
+                    '人工智能': 'aiCombined', // 添加人工智能的支持
                     '项目校': 'projectSchool',  // 添加项目校字段
                     '获奖情况': 'award'        // 添加获奖情况字段
                 };
@@ -1076,11 +1085,25 @@
                         const work = {};
                         headers.forEach((header, headerIndex) => {
                             if (fieldMapping[header]) {
-                                work[fieldMapping[header]] = row[headerIndex] || '';
+                                let cellValue = row[headerIndex];
+                                
+                                // 处理undefined字符串和其他空值情况
+                                if (cellValue === 'undefined' || cellValue === undefined || cellValue === null || cellValue === '') {
+                                    cellValue = '';
+                                } else {
+                                    cellValue = String(cellValue).trim();
+                                }
+                                
+                                work[fieldMapping[header]] = cellValue;
                                 
                                 // 调试：记录关键字段的数据
-                                if (['用户ip', '主题', 'AI结合'].includes(header)) {
-                                    console.log(`第${index + 2}行 ${header}:`, row[headerIndex]);
+                                if (['获奖情况'].includes(header)) {
+                                    console.log(`第${index + 2}行 ${header}:`, row[headerIndex], '-> 映射到:', fieldMapping[header]);
+                                }
+                                
+                                // 调试：记录AI相关字段的数据
+                                if (['AI结合', 'ai结合', 'AI', 'AI应用', 'AI工具', 'AI技术', '人工智能'].includes(header)) {
+                                    console.log(`第${index + 2}行 ${header}:`, `"${row[headerIndex]}"`, '-> aiCombined:', `"${work.aiCombined}"`);
                                 }
                             }
                         });
@@ -1177,11 +1200,13 @@
         }
 
         function populateTagFilter() {
+            console.log('🔍 populateTagFilter函数开始执行');
             const tagMap = new Map();
             const themeMap = new Map();
             const aiMap = new Map();
             const locationMap = new Map();
             const awardMap = new Map();
+            const projectSchoolMap = new Map();
             
             allWorks.forEach(work => {
                 // 处理Tag
@@ -1199,7 +1224,11 @@
                 
                 // 处理AI结合
                 if (work.aiCombined) {
-                    aiMap.set(work.aiCombined.trim(), (aiMap.get(work.aiCombined.trim()) || 0) + 1);
+                    const aiValue = safeToString(work.aiCombined).trim();
+                    // safeToString现在会自动处理'undefined'字符串
+                    if (aiValue !== '') {
+                        aiMap.set(aiValue, (aiMap.get(aiValue) || 0) + 1);
+                    }
                 }
                 
                 // 处理IP地点
@@ -1211,6 +1240,11 @@
                 const award = safeToString(work.award || work['获奖情况'] || '').trim();
                 if (award) {
                     awardMap.set(award, (awardMap.get(award) || 0) + 1);
+                }
+                
+                // 处理项目校
+                if (work.projectSchool) {
+                    projectSchoolMap.set(work.projectSchool.trim(), (projectSchoolMap.get(work.projectSchool.trim()) || 0) + 1);
                 }
             });
             
@@ -1236,13 +1270,63 @@
             
             // 填充AI结合筛选
             const aiFilter = document.getElementById('aiFilter');
-            aiFilter.innerHTML = '<option value="">全部</option>';
+            aiFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            console.log('开始AI统计，总作品数:', allWorks.length);
+            console.log('前5个作品的AI字段:', allWorks.slice(0, 5).map(w => ({
+                title: w.title,
+                aiCombined: w.aiCombined,
+                aiCombinedType: typeof w.aiCombined
+            })));
+            
+            // 添加统一分类选项
+            const hasAiCount = allWorks.filter(work => {
+                const ai = safeToString(work.aiCombined || '').trim();
+                const hasAi = ai !== '';
+                console.log('AI统计调试 - 作品:', work.title, 'aiCombined:', `"${work.aiCombined}"`, 'ai处理后:', `"${ai}"`, 'hasAi:', hasAi);
+                return hasAi;
+            }).length;
+            const noAiCount = allWorks.length - hasAiCount;
+            
+            console.log('AI统计结果 - 有AI:', hasAiCount, '无AI:', noAiCount, '总数:', allWorks.length);
+            console.log('🚀 正在创建AI筛选选项 - 版本2024.1.2');
+            
+            // 强制显示统一分类选项，不管数量是否为0
+            const hasAiOption = document.createElement('option');
+            hasAiOption.value = '__HAS_AI__';
+            hasAiOption.textContent = `有AI (${hasAiCount})`;
+            console.log('创建有AI选项:', hasAiOption.textContent);
+            aiFilter.appendChild(hasAiOption);
+            
+            const noAiOption = document.createElement('option');
+            noAiOption.value = '__NO_AI__';
+            noAiOption.textContent = `没AI (${noAiCount})`;
+            console.log('创建没AI选项:', noAiOption.textContent);
+            aiFilter.appendChild(noAiOption);
+            
+            // 添加具体AI类型
             Array.from(aiMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([ai, count]) => {
                 const option = document.createElement('option');
                 option.value = ai;
                 option.textContent = `${ai} (${count})`;
                 aiFilter.appendChild(option);
             });
+            
+            // 强制修正统一分类选项的文本（防止被其他代码覆盖）
+            setTimeout(() => {
+                const aiFilterElement = document.getElementById('aiFilter');
+                const hasAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__HAS_AI__');
+                const noAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__NO_AI__');
+                
+                if (hasAiOpt) {
+                    hasAiOpt.textContent = `有AI (${hasAiCount})`;
+                    console.log('初始强制修正有AI选项文本:', hasAiOpt.textContent);
+                }
+                if (noAiOpt) {
+                    noAiOpt.textContent = `没AI (${noAiCount})`;
+                    console.log('初始强制修正没AI选项文本:', noAiOpt.textContent);
+                }
+            }, 50);
             
             // 填充地点筛选
             const locationFilter = document.getElementById('locationFilter');
@@ -1287,12 +1371,218 @@
                 awardFilter.appendChild(option);
             });
             
+            // 填充项目校筛选
+            const projectSchoolFilter = document.getElementById('projectSchoolFilter');
+            projectSchoolFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            // 添加统一分类选项
+            const hasProjectSchoolCount = allWorks.filter(work => {
+                const projectSchool = safeToString(work.projectSchool || '').trim();
+                return projectSchool !== '';
+            }).length;
+            const noProjectSchoolCount = allWorks.length - hasProjectSchoolCount;
+            
+            if (hasProjectSchoolCount > 0) {
+                const hasProjectSchoolOption = document.createElement('option');
+                hasProjectSchoolOption.value = '__HAS_PROJECT_SCHOOL__';
+                hasProjectSchoolOption.textContent = `全部项目校 (${hasProjectSchoolCount})`;
+                projectSchoolFilter.appendChild(hasProjectSchoolOption);
+            }
+            
+            if (noProjectSchoolCount > 0) {
+                const noProjectSchoolOption = document.createElement('option');
+                noProjectSchoolOption.value = '__NO_PROJECT_SCHOOL__';
+                noProjectSchoolOption.textContent = `全部非项目校 (${noProjectSchoolCount})`;
+                projectSchoolFilter.appendChild(noProjectSchoolOption);
+            }
+            
+            // 添加具体项目校
+            Array.from(projectSchoolMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([projectSchool, count]) => {
+                const option = document.createElement('option');
+                option.value = projectSchool;
+                option.textContent = `${projectSchool} (${count})`;
+                projectSchoolFilter.appendChild(option);
+            });
+            
             // 保存所有选项数据
             window.allTagOptions = Array.from(tagMap.entries());
             window.allThemeOptions = Array.from(themeMap.entries());
             window.allAiOptions = Array.from(aiMap.entries());
             window.allLocationOptions = Array.from(locationMap.entries());
             window.allAwardOptions = Array.from(awardMap.entries());
+            window.allProjectSchoolOptions = Array.from(projectSchoolMap.entries());
+        }
+
+        // 更新筛选器数字，不改变当前选中值
+        function updateFilterCounts() {
+            // 保存当前选中的值
+            const currentAwardFilter = document.getElementById('awardFilter').value;
+            const currentProjectSchoolFilter = document.getElementById('projectSchoolFilter').value;
+            const currentAiFilter = document.getElementById('aiFilter').value;
+            
+            // 使用当前显示的作品数据来计算统计
+            const currentWorks = displayedWorks.length > 0 ? displayedWorks : allWorks;
+            
+            const awardMap = new Map();
+            const projectSchoolMap = new Map();
+            const aiMap = new Map();
+            
+            currentWorks.forEach(work => {
+                // 处理获奖情况
+                const award = safeToString(work.award || work['获奖情况'] || '').trim();
+                if (award) {
+                    awardMap.set(award, (awardMap.get(award) || 0) + 1);
+                }
+                
+                // 处理项目校
+                if (work.projectSchool) {
+                    projectSchoolMap.set(work.projectSchool.trim(), (projectSchoolMap.get(work.projectSchool.trim()) || 0) + 1);
+                }
+                
+                // 处理AI结合
+                if (work.aiCombined) {
+                    const aiValue = safeToString(work.aiCombined).trim();
+                    // safeToString现在会自动处理'undefined'字符串
+                    if (aiValue !== '') {
+                        aiMap.set(aiValue, (aiMap.get(aiValue) || 0) + 1);
+                    }
+                }
+            });
+
+            // 更新获奖情况筛选器
+            const awardFilter = document.getElementById('awardFilter');
+            awardFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            // 添加特殊选项
+            const hasAwardCount = currentWorks.filter(work => {
+                const award = safeToString(work.award || work['获奖情况'] || '').trim();
+                return award !== '';
+            }).length;
+            const noAwardCount = currentWorks.length - hasAwardCount;
+            
+            if (hasAwardCount > 0) {
+                const hasAwardOption = document.createElement('option');
+                hasAwardOption.value = '__HAS_AWARD__';
+                hasAwardOption.textContent = `获奖作品 (${hasAwardCount})`;
+                awardFilter.appendChild(hasAwardOption);
+            }
+            
+            if (noAwardCount > 0) {
+                const noAwardOption = document.createElement('option');
+                noAwardOption.value = '__NO_AWARD__';
+                noAwardOption.textContent = `未获奖作品 (${noAwardCount})`;
+                awardFilter.appendChild(noAwardOption);
+            }
+            
+            // 添加具体奖项
+            Array.from(awardMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([award, count]) => {
+                const option = document.createElement('option');
+                option.value = award;
+                option.textContent = `${award} (${count})`;
+                awardFilter.appendChild(option);
+            });
+            
+            // 更新项目校筛选器
+            const projectSchoolFilter = document.getElementById('projectSchoolFilter');
+            projectSchoolFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            // 添加统一分类选项
+            const hasProjectSchoolCount = currentWorks.filter(work => {
+                const projectSchool = safeToString(work.projectSchool || '').trim();
+                return projectSchool !== '';
+            }).length;
+            const noProjectSchoolCount = currentWorks.length - hasProjectSchoolCount;
+            
+            if (hasProjectSchoolCount > 0) {
+                const hasProjectSchoolOption = document.createElement('option');
+                hasProjectSchoolOption.value = '__HAS_PROJECT_SCHOOL__';
+                hasProjectSchoolOption.textContent = `全部项目校 (${hasProjectSchoolCount})`;
+                projectSchoolFilter.appendChild(hasProjectSchoolOption);
+            }
+            
+            if (noProjectSchoolCount > 0) {
+                const noProjectSchoolOption = document.createElement('option');
+                noProjectSchoolOption.value = '__NO_PROJECT_SCHOOL__';
+                noProjectSchoolOption.textContent = `全部非项目校 (${noProjectSchoolCount})`;
+                projectSchoolFilter.appendChild(noProjectSchoolOption);
+            }
+            
+            // 添加具体项目校
+            Array.from(projectSchoolMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([projectSchool, count]) => {
+                const option = document.createElement('option');
+                option.value = projectSchool;
+                option.textContent = `${projectSchool} (${count})`;
+                projectSchoolFilter.appendChild(option);
+            });
+            
+            // 恢复之前选中的值
+            document.getElementById('awardFilter').value = currentAwardFilter;
+            document.getElementById('projectSchoolFilter').value = currentProjectSchoolFilter;
+            
+            // 更新AI结合筛选器
+            const aiFilter = document.getElementById('aiFilter');
+            aiFilter.innerHTML = '<option value="">全部作品</option>';
+            
+            // 添加统一分类选项
+            const hasAiCount = currentWorks.filter(work => {
+                const ai = safeToString(work.aiCombined || '').trim();
+                const hasAi = ai !== '';
+                console.log('更新AI统计调试 - 作品:', work.title, 'aiCombined:', `"${work.aiCombined}"`, 'ai处理后:', `"${ai}"`, 'hasAi:', hasAi);
+                return hasAi;
+            }).length;
+            const noAiCount = currentWorks.length - hasAiCount;
+            
+            console.log('更新AI统计结果 - 有AI:', hasAiCount, '无AI:', noAiCount, '当前总数:', currentWorks.length);
+            console.log('🔄 updateFilterCounts正在创建AI筛选选项 - 版本2024.1.2');
+            
+            // 强制显示统一分类选项，不管数量是否为0
+            const hasAiOption = document.createElement('option');
+            hasAiOption.value = '__HAS_AI__';
+            hasAiOption.textContent = `有AI (${hasAiCount})`;
+            console.log('updateFilterCounts创建有AI选项:', hasAiOption.textContent);
+            aiFilter.appendChild(hasAiOption);
+            
+            const noAiOption = document.createElement('option');
+            noAiOption.value = '__NO_AI__';
+            noAiOption.textContent = `没AI (${noAiCount})`;
+            console.log('updateFilterCounts创建没AI选项:', noAiOption.textContent);
+            aiFilter.appendChild(noAiOption);
+            
+            // 添加具体AI类型
+            Array.from(aiMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([ai, count]) => {
+                const option = document.createElement('option');
+                option.value = ai;
+                option.textContent = `${ai} (${count})`;
+                aiFilter.appendChild(option);
+            });
+            
+            // 强制修正统一分类选项的文本（防止被其他代码覆盖）
+            setTimeout(() => {
+                const aiFilterElement = document.getElementById('aiFilter');
+                const hasAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__HAS_AI__');
+                const noAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__NO_AI__');
+                
+                if (hasAiOpt) {
+                    hasAiOpt.textContent = `有AI (${hasAiCount})`;
+                    console.log('强制修正有AI选项文本:', hasAiOpt.textContent);
+                }
+                if (noAiOpt) {
+                    noAiOpt.textContent = `没AI (${noAiCount})`;
+                    console.log('强制修正没AI选项文本:', noAiOpt.textContent);
+                }
+            }, 50);
+            
+            // 恢复AI筛选器的选中值
+            document.getElementById('aiFilter').value = currentAiFilter;
+            
+            // 检查选项是否被正确创建
+            setTimeout(() => {
+                const aiFilterElement = document.getElementById('aiFilter');
+                console.log('🔍 检查AI筛选器最终状态:');
+                Array.from(aiFilterElement.options).forEach((option, index) => {
+                    console.log(`选项${index}: value="${option.value}", text="${option.textContent}"`);
+                });
+            }, 100);
         }
 
         function updateFilterOptions() {
@@ -1341,7 +1631,20 @@
                         return tagList.includes(selectedTag);
                     })() : true;
                     const matchTheme = selectedTheme ? work.theme === selectedTheme : true;
-                    const matchAI = ai ? work.aiCombined === ai : true;
+                    
+                    // 修复AI筛选逻辑，处理特殊值
+                    let matchAI = true;
+                    if (ai) {
+                        const workAi = safeToString(work.aiCombined || '').trim();
+                        if (ai === '__HAS_AI__') {
+                            matchAI = workAi !== '';
+                        } else if (ai === '__NO_AI__') {
+                            matchAI = workAi === '';
+                        } else {
+                            matchAI = work.aiCombined === ai;
+                        }
+                    }
+                    
                     const matchLocation = selectedLocation ? work.location === selectedLocation : true;
                     return matchTag && matchTheme && matchAI && matchLocation;
                 }).length;
@@ -2262,6 +2565,7 @@
         document.getElementById('aiFilter').addEventListener('change', filterWorks);
         document.getElementById('locationFilter').addEventListener('change', filterWorks);
         document.getElementById('awardFilter').addEventListener('change', filterWorks);
+        document.getElementById('projectSchoolFilter').addEventListener('change', filterWorks);
 
         // 宽度控制功能
         function initWidthControl() {
@@ -2510,7 +2814,11 @@ AI技术结合：${aiCombined}
         function safeToString(value) {
             try {
                 if (value === null || value === undefined) return '';
-                if (typeof value === 'string') return value;
+                if (typeof value === 'string') {
+                    // 处理字符串形式的 'undefined' 和 'null'
+                    if (value === 'undefined' || value === 'null') return '';
+                    return value;
+                }
                 if (typeof value === 'number') return value.toString();
                 if (typeof value === 'boolean') return value.toString();
                 if (typeof value === 'object') {
@@ -2535,9 +2843,11 @@ AI技术结合：${aiCombined}
             const aiFilter = document.getElementById('aiFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;
             const awardFilter = document.getElementById('awardFilter').value;
+            const projectSchoolFilter = document.getElementById('projectSchoolFilter').value;
             
             // 简化日志输出，避免显示Object
-            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter, '获奖:', awardFilter);
+            console.log('🔍 筛选条件 - AI筛选:', aiFilter);
+            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter, '获奖:', awardFilter, '项目校:', projectSchoolFilter);
             console.log('总作品数:', allWorks.length);
             
             displayedWorks = allWorks.filter(work => {
@@ -2598,7 +2908,14 @@ AI技术结合：${aiCombined}
                 let matchAI = true;
                 if (aiFilter) {
                     try {
-                        matchAI = safeToString(work.aiCombined) === aiFilter;
+                        const ai = safeToString(work.aiCombined || '').trim();
+                        if (aiFilter === '__HAS_AI__') {
+                            matchAI = ai !== '';
+                        } else if (aiFilter === '__NO_AI__') {
+                            matchAI = ai === '';
+                        } else {
+                            matchAI = safeToString(work.aiCombined) === aiFilter;
+                        }
                     } catch (error) {
                         console.error('AI过滤出错:', error, work);
                         matchAI = false;
@@ -2634,14 +2951,35 @@ AI技术结合：${aiCombined}
                     }
                 }
                 
-                return matchSearch && matchTag && matchTheme && matchAI && matchLocation && matchAward;
+                // 项目校过滤
+                let matchProjectSchool = true;
+                if (projectSchoolFilter) {
+                    try {
+                        const projectSchool = safeToString(work.projectSchool || '').trim();
+                        if (projectSchoolFilter === '__HAS_PROJECT_SCHOOL__') {
+                            matchProjectSchool = projectSchool !== '';
+                        } else if (projectSchoolFilter === '__NO_PROJECT_SCHOOL__') {
+                            matchProjectSchool = projectSchool === '';
+                        } else {
+                            matchProjectSchool = safeToString(work.projectSchool) === projectSchoolFilter;
+                        }
+                    } catch (error) {
+                        console.error('项目校过滤出错:', error, work);
+                        matchProjectSchool = false;
+                    }
+                }
+                
+                return matchSearch && matchTag && matchTheme && matchAI && matchLocation && matchAward && matchProjectSchool;
             });
             
             console.log('筛选后作品数:', displayedWorks.length);
             
+            // 更新筛选器选项数字
+            updateFilterCounts();
+            
             // 更新搜索状态显示
             const searchStatus = document.getElementById('searchStatus');
-            if (query || tagFilter || themeFilter || aiFilter || locationFilter || awardFilter) {
+            if (query || tagFilter || themeFilter || aiFilter || locationFilter || awardFilter || projectSchoolFilter) {
                 const totalWorks = allWorks.length;
                 const filteredWorks = displayedWorks.length;
                 searchStatus.textContent = `找到 ${filteredWorks} 个作品（共 ${totalWorks} 个）`;
