@@ -526,6 +526,18 @@
             transform: translateY(0);
         }
 
+        /* 重置筛选按钮样式 */
+        button[onclick="resetAllFilters()"]:hover {
+            background: #ffeaa7 !important;
+            border-color: #fdcb6e !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(133, 100, 4, 0.2);
+        }
+        
+        button[onclick="resetAllFilters()"]:active {
+            transform: translateY(0);
+        }
+
         /* 滑块样式 */
         input[type="range"] {
             -webkit-appearance: none;
@@ -756,6 +768,101 @@
                 font-size: 20px;
             }
         }
+        
+        /* 下拉式多选组件样式 */
+        .multi-select-dropdown {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .multi-select-dropdown:hover {
+            border-color: #cbd5e0;
+        }
+        
+        .multi-select-dropdown.open {
+            border-color: #3182ce;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .multi-select-dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .multi-select-options {
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .multi-select-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+            border-bottom: 1px solid #f7fafc;
+        }
+        
+        .multi-select-option:last-child {
+            border-bottom: none;
+        }
+        
+        .multi-select-option:hover {
+            background-color: #f7fafc;
+        }
+        
+        .multi-select-option.selected {
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+        }
+        
+        .multi-select-option input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        /* 搜索框样式 */
+        .multi-select-search {
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+        
+        .multi-select-search input:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        
+        .search-tip {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .multi-select-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .multi-select-option.disabled:hover {
+            background-color: transparent;
+        }
+        
+        .multi-select-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .dropdown-arrow {
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -797,6 +904,9 @@
                     <button onclick="resetWidth()" style="padding: 10px 18px; background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
                         🔄 重置
                     </button>
+                    <button onclick="resetAllFilters()" style="padding: 10px 18px; background: #fff3cd; color: #856404; border: 2px solid #ffeaa7; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
+                        🧹 重置筛选
+                    </button>
                     <button onclick="document.getElementById('fileInput').click();" class="upload-btn" style="padding: 10px 18px; background: #e3f2fd; color: #1976d2; border: 2px solid #bbdefb; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
                         📁 上传Excel
                     </button>
@@ -828,9 +938,20 @@
                     </div>
                     <div>
                         <label for="aiFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按AI结合筛选:</label>
-                        <select id="aiFilter" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; font-size: 16px; outline: none; background: #f8fafc; transition: all 0.3s ease;">
-                            <option value="">全部</option>
-                        </select>
+                        <div id="aiFilter" class="multi-select-dropdown" style="width: 100%; min-height: 48px; padding: 12px 16px; border-radius: 10px; border: 2px solid #e2e8f0; background: #f8fafc; transition: all 0.3s ease; cursor: pointer; position: relative;">
+                            <div class="multi-select-display" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="multi-select-text" style="color: #718096; font-size: 16px;">全部</span>
+                                <span class="dropdown-arrow" style="color: #718096; font-size: 12px; transition: transform 0.3s ease;">▼</span>
+                            </div>
+                            <div class="multi-select-options" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-top: none; border-radius: 0 0 10px 10px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <!-- 搜索输入框 -->
+                                <div class="multi-select-search" style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                    <input type="text" id="aiFilterSearch" placeholder="输入关键词自动选择相关选项..." style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                                    <div style="font-size: 12px; color: #718096; margin-top: 4px;">例如：输入"AI编程"会自动选择所有包含该词的选项</div>
+                                </div>
+                                <!-- 选项将通过JavaScript动态添加 -->
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label for="locationFilter" style="color: #2d3748; font-weight: 600; margin-bottom: 8px; display: block;">按IP地点筛选:</label>
@@ -865,6 +986,7 @@
     <script>
         let allWorks = [];
         let displayedWorks = [];
+        let selectedAiFilters = new Set(); // 存储选中的AI筛选项
 
         // 页面加载时自动读取Excel文件
         document.addEventListener('DOMContentLoaded', function() {
@@ -1089,7 +1211,6 @@
                 const searchQuery = document.getElementById('searchInput').value.trim();
                 const tagFilter = document.getElementById('tagFilter').value;
                 const themeFilter = document.getElementById('themeFilter').value;
-                const aiFilter = document.getElementById('aiFilter').value;
                 const locationFilter = document.getElementById('locationFilter').value;
                 
                 let filterDesc = '';
@@ -1097,10 +1218,13 @@
                 if (searchQuery) filters.push(`搜索_${searchQuery}`);
                 if (tagFilter) filters.push(`标签_${tagFilter}`);
                 if (themeFilter) filters.push(`主题_${themeFilter}`);
-                if (aiFilter) {
-                    if (aiFilter === '__HAS_AI__') filters.push('有AI');
-                    else if (aiFilter === '__NO_AI__') filters.push('没AI');
-                    else filters.push(`AI_${aiFilter}`);
+                if (selectedAiFilters.size > 0) {
+                    const aiFilterNames = Array.from(selectedAiFilters).map(filter => {
+                        if (filter === '__HAS_AI__') return '有AI';
+                        if (filter === '__NO_AI__') return '没AI';
+                        return filter;
+                    });
+                    filters.push(`AI_${aiFilterNames.join('+')}`);
                 }
                 if (locationFilter) filters.push(`地点_${locationFilter}`);
                 
@@ -1382,9 +1506,27 @@
                 themeFilter.appendChild(option);
             });
             
-            // 填充AI结合筛选
+            // 填充AI结合筛选 - 下拉式多选版本
             const aiFilter = document.getElementById('aiFilter');
-            aiFilter.innerHTML = '<option value="">全部作品</option>';
+            const optionsContainer = aiFilter.querySelector('.multi-select-options');
+            
+            // 保留搜索框，只清空选项部分
+            const searchContainer = optionsContainer.querySelector('.multi-select-search');
+            optionsContainer.innerHTML = ''; // 清空选项容器
+            
+            // 重新添加搜索框
+            if (!searchContainer) {
+                const newSearchContainer = document.createElement('div');
+                newSearchContainer.className = 'multi-select-search';
+                newSearchContainer.style.cssText = 'padding: 8px 12px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;';
+                newSearchContainer.innerHTML = `
+                    <input type="text" id="aiFilterSearch" placeholder="输入关键词自动选择相关选项..." style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; outline: none; background: white;">
+                    <div style="font-size: 12px; color: #718096; margin-top: 4px;">例如：输入"AI编程"会自动选择所有包含该词的选项</div>
+                `;
+                optionsContainer.appendChild(newSearchContainer);
+            } else {
+                optionsContainer.appendChild(searchContainer);
+            }
             
             console.log('开始AI统计，总作品数:', allWorks.length);
             console.log('前5个作品的AI字段:', allWorks.slice(0, 5).map(w => ({
@@ -1403,44 +1545,30 @@
             const noAiCount = allWorks.length - hasAiCount;
             
             console.log('AI统计结果 - 有AI:', hasAiCount, '无AI:', noAiCount, '总数:', allWorks.length);
-            console.log('🚀 正在创建AI筛选选项 - 版本2024.1.2');
+            console.log('🚀 正在创建AI筛选选项 - 下拉式多选版本2024.1.2');
             
-            // 强制显示统一分类选项，不管数量是否为0
-            const hasAiOption = document.createElement('option');
-            hasAiOption.value = '__HAS_AI__';
-            hasAiOption.textContent = `有AI (${hasAiCount})`;
-            console.log('创建有AI选项:', hasAiOption.textContent);
-            aiFilter.appendChild(hasAiOption);
+            // 添加统一分类选项
+            if (hasAiCount > 0) {
+                const hasAiOption = createMultiSelectOption('__HAS_AI__', `有AI (${hasAiCount})`);
+                optionsContainer.appendChild(hasAiOption);
+            }
             
-            const noAiOption = document.createElement('option');
-            noAiOption.value = '__NO_AI__';
-            noAiOption.textContent = `没AI (${noAiCount})`;
-            console.log('创建没AI选项:', noAiOption.textContent);
-            aiFilter.appendChild(noAiOption);
+            if (noAiCount > 0) {
+                const noAiOption = createMultiSelectOption('__NO_AI__', `没AI (${noAiCount})`);
+                optionsContainer.appendChild(noAiOption);
+            }
             
             // 添加具体AI类型
             Array.from(aiMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([ai, count]) => {
-                const option = document.createElement('option');
-                option.value = ai;
-                option.textContent = `${ai} (${count})`;
-                aiFilter.appendChild(option);
+                if (count > 0) {
+                    const option = createMultiSelectOption(ai, `${ai} (${count})`);
+                    optionsContainer.appendChild(option);
+                }
             });
             
-            // 强制修正统一分类选项的文本（防止被其他代码覆盖）
-            setTimeout(() => {
-                const aiFilterElement = document.getElementById('aiFilter');
-                const hasAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__HAS_AI__');
-                const noAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__NO_AI__');
-                
-                if (hasAiOpt) {
-                    hasAiOpt.textContent = `有AI (${hasAiCount})`;
-                    console.log('初始强制修正有AI选项文本:', hasAiOpt.textContent);
-                }
-                if (noAiOpt) {
-                    noAiOpt.textContent = `没AI (${noAiCount})`;
-                    console.log('初始强制修正没AI选项文本:', noAiOpt.textContent);
-                }
-            }, 50);
+            // 初始化下拉交互
+            initMultiSelectDropdown();
+            updateAiFilterDisplay();
             
             // 填充地点筛选
             const locationFilter = document.getElementById('locationFilter');
@@ -1530,18 +1658,45 @@
         // 更新筛选器数字，不改变当前选中值
         function updateFilterCounts() {
             // 保存当前选中的值
+            const currentTagFilter = document.getElementById('tagFilter').value;
+            const currentThemeFilter = document.getElementById('themeFilter').value;
+            const currentLocationFilter = document.getElementById('locationFilter').value;
             const currentAwardFilter = document.getElementById('awardFilter').value;
             const currentProjectSchoolFilter = document.getElementById('projectSchoolFilter').value;
-            const currentAiFilter = document.getElementById('aiFilter').value;
+            // AI筛选器现在是多选，不需要保存单一值
             
             // 使用当前显示的作品数据来计算统计
             const currentWorks = displayedWorks.length > 0 ? displayedWorks : allWorks;
             
+            const tagMap = new Map();
+            const themeMap = new Map();
+            const locationMap = new Map();
             const awardMap = new Map();
             const projectSchoolMap = new Map();
             const aiMap = new Map();
             
             currentWorks.forEach(work => {
+                // 处理标签
+                const tags = safeToString(work.tags);
+                if (tags) {
+                    const tagList = tags.split(/[,，;；]/).map(t => t.trim()).filter(t => t);
+                    tagList.forEach(tag => {
+                        tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+                    });
+                }
+                
+                // 处理主题
+                const theme = safeToString(work.theme);
+                if (theme) {
+                    themeMap.set(theme, (themeMap.get(theme) || 0) + 1);
+                }
+                
+                // 处理地点
+                const location = safeToString(work.location);
+                if (location) {
+                    locationMap.set(location, (locationMap.get(location) || 0) + 1);
+                }
+                
                 // 处理获奖情况
                 const award = safeToString(work.award || work['获奖情况'] || '').trim();
                 if (award) {
@@ -1561,6 +1716,36 @@
                         aiMap.set(aiValue, (aiMap.get(aiValue) || 0) + 1);
                     }
                 }
+            });
+
+            // 更新标签筛选器
+            const tagFilter = document.getElementById('tagFilter');
+            tagFilter.innerHTML = '<option value="">全部标签</option>';
+            Array.from(tagMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([tag, count]) => {
+                const option = document.createElement('option');
+                option.value = tag;
+                option.textContent = `${tag} (${count})`;
+                tagFilter.appendChild(option);
+            });
+            
+            // 更新主题筛选器
+            const themeFilter = document.getElementById('themeFilter');
+            themeFilter.innerHTML = '<option value="">全部主题</option>';
+            Array.from(themeMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([theme, count]) => {
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = `${theme} (${count})`;
+                themeFilter.appendChild(option);
+            });
+            
+            // 更新地点筛选器
+            const locationFilter = document.getElementById('locationFilter');
+            locationFilter.innerHTML = '<option value="">全部地点</option>';
+            Array.from(locationMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([location, count]) => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = `${location} (${count})`;
+                locationFilter.appendChild(option);
             });
 
             // 更新获奖情况筛选器
@@ -1630,71 +1815,70 @@
             });
             
             // 恢复之前选中的值
+            document.getElementById('tagFilter').value = currentTagFilter;
+            document.getElementById('themeFilter').value = currentThemeFilter;
+            document.getElementById('locationFilter').value = currentLocationFilter;
             document.getElementById('awardFilter').value = currentAwardFilter;
             document.getElementById('projectSchoolFilter').value = currentProjectSchoolFilter;
             
-            // 更新AI结合筛选器
+            // 更新AI结合筛选器 - 下拉式多选版本，只更新数量显示
             const aiFilter = document.getElementById('aiFilter');
-            aiFilter.innerHTML = '<option value="">全部作品</option>';
+            const optionsContainer = aiFilter.querySelector('.multi-select-options');
+            const aiOptions = optionsContainer.querySelectorAll('.multi-select-option');
             
-            // 添加统一分类选项
-            const hasAiCount = currentWorks.filter(work => {
-                const ai = safeToString(work.aiCombined || '').trim();
-                const hasAi = ai !== '';
-                console.log('更新AI统计调试 - 作品:', work.title, 'aiCombined:', `"${work.aiCombined}"`, 'ai处理后:', `"${ai}"`, 'hasAi:', hasAi);
-                return hasAi;
-            }).length;
-            const noAiCount = currentWorks.length - hasAiCount;
-            
-            console.log('更新AI统计结果 - 有AI:', hasAiCount, '无AI:', noAiCount, '当前总数:', currentWorks.length);
-            console.log('🔄 updateFilterCounts正在创建AI筛选选项 - 版本2024.1.2');
-            
-            // 强制显示统一分类选项，不管数量是否为0
-            const hasAiOption = document.createElement('option');
-            hasAiOption.value = '__HAS_AI__';
-            hasAiOption.textContent = `有AI (${hasAiCount})`;
-            console.log('updateFilterCounts创建有AI选项:', hasAiOption.textContent);
-            aiFilter.appendChild(hasAiOption);
-            
-            const noAiOption = document.createElement('option');
-            noAiOption.value = '__NO_AI__';
-            noAiOption.textContent = `没AI (${noAiCount})`;
-            console.log('updateFilterCounts创建没AI选项:', noAiOption.textContent);
-            aiFilter.appendChild(noAiOption);
-            
-            // 添加具体AI类型
-            Array.from(aiMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([ai, count]) => {
-                const option = document.createElement('option');
-                option.value = ai;
-                option.textContent = `${ai} (${count})`;
-                aiFilter.appendChild(option);
+            // AI筛选器的数量应该基于全部作品，而不是当前筛选结果
+            // 重新计算AI统计（基于全部作品）
+            const allWorksAiMap = new Map();
+            allWorks.forEach(work => {
+                if (work.aiCombined) {
+                    const aiValue = safeToString(work.aiCombined).trim();
+                    if (aiValue !== '') {
+                        allWorksAiMap.set(aiValue, (allWorksAiMap.get(aiValue) || 0) + 1);
+                    }
+                }
             });
             
-            // 强制修正统一分类选项的文本（防止被其他代码覆盖）
-            setTimeout(() => {
-                const aiFilterElement = document.getElementById('aiFilter');
-                const hasAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__HAS_AI__');
-                const noAiOpt = Array.from(aiFilterElement.options).find(opt => opt.value === '__NO_AI__');
-                
-                if (hasAiOpt) {
-                    hasAiOpt.textContent = `有AI (${hasAiCount})`;
-                    console.log('强制修正有AI选项文本:', hasAiOpt.textContent);
-                }
-                if (noAiOpt) {
-                    noAiOpt.textContent = `没AI (${noAiCount})`;
-                    console.log('强制修正没AI选项文本:', noAiOpt.textContent);
-                }
-            }, 50);
+            const hasAiCount = allWorks.filter(work => {
+                const ai = safeToString(work.aiCombined || '').trim();
+                return ai !== '';
+            }).length;
+            const noAiCount = allWorks.length - hasAiCount;
             
-            // 恢复AI筛选器的选中值
-            document.getElementById('aiFilter').value = currentAiFilter;
+            console.log('更新AI统计结果（基于全部作品）- 有AI:', hasAiCount, '无AI:', noAiCount, '总数:', allWorks.length);
+            
+            // 更新每个选项的计数显示
+            aiOptions.forEach(option => {
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                const label = option.querySelector('label');
+                const value = checkbox.value;
+                
+                let count = 0;
+                if (value === '__HAS_AI__') {
+                    count = hasAiCount;
+                    label.textContent = `有AI (${count})`;
+                } else if (value === '__NO_AI__') {
+                    count = noAiCount;
+                    label.textContent = `没AI (${count})`;
+                } else {
+                    count = allWorksAiMap.get(value) || 0;
+                    label.textContent = `${value} (${count})`;
+                }
+                
+                // 不禁用任何选项，让用户可以自由选择
+                option.classList.remove('disabled');
+                checkbox.disabled = false;
+            });
             
             // 检查选项是否被正确创建
             setTimeout(() => {
                 const aiFilterElement = document.getElementById('aiFilter');
+                const optionsContainer = aiFilterElement.querySelector('.multi-select-options');
+                const allOptions = optionsContainer.querySelectorAll('.multi-select-option');
                 console.log('🔍 检查AI筛选器最终状态:');
-                Array.from(aiFilterElement.options).forEach((option, index) => {
-                    console.log(`选项${index}: value="${option.value}", text="${option.textContent}"`);
+                allOptions.forEach((option, index) => {
+                    const checkbox = option.querySelector('input[type="checkbox"]');
+                    const label = option.querySelector('label');
+                    console.log(`选项${index}: value="${checkbox.value}", text="${label.textContent}", checked="${checkbox.checked}"`);
                 });
             }, 100);
         }
@@ -1821,6 +2005,391 @@
                     option.style.color = count === 0 ? '#ccc' : '#333';
                 }
             });
+        }
+
+        // 下拉式多选AI筛选器辅助函数
+        function createMultiSelectOption(value, text) {
+            const option = document.createElement('div');
+            option.className = 'multi-select-option';
+            option.innerHTML = `
+                <input type="checkbox" value="${value}" id="ai_${value.replace(/[^a-zA-Z0-9]/g, '_')}">
+                <label for="ai_${value.replace(/[^a-zA-Z0-9]/g, '_')}" style="cursor: pointer; flex: 1;">${text}</label>
+            `;
+            
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation(); // 防止触发下拉框关闭
+                if (this.checked) {
+                    selectedAiFilters.add(value);
+                    option.classList.add('selected');
+                } else {
+                    selectedAiFilters.delete(value);
+                    option.classList.remove('selected');
+                }
+                updateAiFilterDisplay();
+                filterWorks(); // 触发筛选
+            });
+            
+            // 点击选项时切换复选框状态
+            option.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    e.stopPropagation();
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+            
+            return option;
+        }
+        
+        function updateAiFilterDisplay() {
+            const aiFilter = document.getElementById('aiFilter');
+            const textElement = aiFilter.querySelector('.multi-select-text');
+            
+            if (selectedAiFilters.size === 0) {
+                textElement.textContent = '全部';
+                textElement.style.color = '#718096';
+            } else {
+                const selectedItems = Array.from(selectedAiFilters);
+                if (selectedItems.length <= 2) {
+                    // 显示具体选项名称
+                    const displayNames = selectedItems.map(item => {
+                        if (item === '__HAS_AI__') return '有AI';
+                        if (item === '__NO_AI__') return '没AI';
+                        return item;
+                    });
+                    textElement.textContent = displayNames.join(', ');
+                } else {
+                    // 计算实际筛选出的作品数量
+                    const actualWorkCount = displayedWorks ? displayedWorks.length : 0;
+                    textElement.textContent = `已选择 ${actualWorkCount} 个作品`;
+                }
+                textElement.style.color = '#2d3748';
+            }
+        }
+        
+        // 初始化下拉式多选组件
+        function initMultiSelectDropdown() {
+            const aiFilter = document.getElementById('aiFilter');
+            const optionsContainer = aiFilter.querySelector('.multi-select-options');
+            const searchInput = document.getElementById('aiFilterSearch');
+            
+            // 点击主容器时切换下拉状态
+            aiFilter.addEventListener('click', function(e) {
+                if (e.target.closest('.multi-select-options')) return; // 如果点击的是选项区域，不处理
+                
+                const isOpen = optionsContainer.style.display === 'block';
+                if (isOpen) {
+                    closeDropdown();
+                } else {
+                    openDropdown();
+                }
+            });
+            
+            // 搜索输入框功能
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    e.stopPropagation();
+                    const searchTerm = this.value.trim().toLowerCase();
+                    handleSearchInput(searchTerm);
+                });
+                
+                // 防止搜索框点击时关闭下拉框
+                searchInput.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // 搜索框获得焦点时自动打开下拉框
+                searchInput.addEventListener('focus', function(e) {
+                    e.stopPropagation();
+                    openDropdown();
+                });
+            }
+            
+            // 点击页面其他地方时关闭下拉框
+            document.addEventListener('click', function(e) {
+                if (!aiFilter.contains(e.target)) {
+                    closeDropdown();
+                }
+            });
+            
+            function openDropdown() {
+                optionsContainer.style.display = 'block';
+                aiFilter.classList.add('open');
+                // 打开时清空搜索框并聚焦
+                if (searchInput) {
+                    searchInput.value = '';
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            }
+            
+            function closeDropdown() {
+                optionsContainer.style.display = 'none';
+                aiFilter.classList.remove('open');
+                // 关闭时清空搜索框
+                if (searchInput) {
+                    searchInput.value = '';
+                    showAllOptions(); // 显示所有选项
+                }
+            }
+        }
+        
+        // 处理搜索输入的函数
+        function handleSearchInput(searchTerm) {
+            const optionsContainer = document.getElementById('aiFilter').querySelector('.multi-select-options');
+            const allOptions = optionsContainer.querySelectorAll('.multi-select-option');
+            
+            if (!searchTerm) {
+                // 如果搜索框为空，显示所有选项
+                showAllOptions();
+                return;
+            }
+            
+            // 清空之前的选择（避免累积选择过多选项）
+            selectedAiFilters.clear();
+            allOptions.forEach(option => {
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                checkbox.checked = false;
+                option.classList.remove('selected');
+            });
+            
+            // 找到匹配的选项 - 使用更智能的匹配逻辑
+            const matchingOptions = [];
+            allOptions.forEach(option => {
+                const label = option.querySelector('label').textContent.toLowerCase();
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                const value = checkbox.value;
+                
+                // 智能匹配逻辑：
+                // 1. 精确匹配优先
+                // 2. 避免匹配特殊选项（__HAS_AI__, __NO_AI__）除非明确搜索
+                // 3. 避免过于宽泛的匹配
+                let isMatch = false;
+                
+                if (searchTerm.length >= 2) { // 至少2个字符才进行匹配
+                    if (value === '__HAS_AI__' || value === '__NO_AI__') {
+                        // 特殊选项需要明确搜索
+                        if (searchTerm === '有ai' || searchTerm === '没ai' || 
+                            searchTerm === 'hasai' || searchTerm === 'noai') {
+                            isMatch = true;
+                        }
+                    } else {
+                        // 普通选项匹配 - 同时检查label和value（统一转换为小写进行比较）
+                        const searchTermLower = searchTerm.toLowerCase();
+                        if (label.includes(searchTermLower) || value.toLowerCase().includes(searchTermLower)) {
+                            isMatch = true;
+                        }
+                        
+                        // 调试信息
+                        if (searchTerm.toLowerCase().includes('语音') && (label.includes('语音') || value.toLowerCase().includes('语音'))) {
+                            console.log('🔍 匹配调试 - 选项:', {
+                                value: value,
+                                label: label,
+                                searchTerm: searchTerm,
+                                searchTermLower: searchTermLower,
+                                labelIncludes: label.includes(searchTermLower),
+                                valueIncludes: value.toLowerCase().includes(searchTermLower),
+                                isMatch: isMatch
+                            });
+                        }
+                    }
+                }
+                
+                if (isMatch) {
+                    matchingOptions.push({
+                        option: option,
+                        checkbox: checkbox,
+                        value: value,
+                        label: label
+                    });
+                    option.style.display = 'flex'; // 显示匹配的选项
+                    option.style.backgroundColor = '#e6fffa'; // 高亮显示
+                } else {
+                    option.style.display = 'none'; // 隐藏不匹配的选项
+                    option.style.backgroundColor = ''; // 移除高亮
+                }
+            });
+            
+            // 用户要求：所有包含输入文字的选项都被自动勾选上
+            // 因此选择所有匹配的选项，不做数量限制
+            let optionsToSelect = matchingOptions;
+            
+            console.log('🔍 搜索"' + searchTerm + '"找到所有匹配选项:', matchingOptions.map(m => ({
+                value: m.value,
+                label: m.label
+            })));
+            
+            // 对匹配的选项进行排序以便更好的显示顺序
+            optionsToSelect = matchingOptions.sort((a, b) => {
+                const aLabel = a.label.toLowerCase();
+                const bLabel = b.label.toLowerCase();
+                const aValue = a.value.toLowerCase();
+                const bValue = b.value.toLowerCase();
+                const searchTermLower = searchTerm.toLowerCase();
+                
+                // 精确匹配优先（检查label和value）
+                const aExact = (aLabel === searchTermLower || aValue === searchTermLower);
+                const bExact = (bLabel === searchTermLower || bValue === searchTermLower);
+                if (aExact && !bExact) return -1;
+                if (bExact && !aExact) return 1;
+                
+                // 开头匹配优先（检查label和value）
+                const aStarts = (aLabel.startsWith(searchTermLower) || aValue.startsWith(searchTermLower));
+                const bStarts = (bLabel.startsWith(searchTermLower) || bValue.startsWith(searchTermLower));
+                if (aStarts && !bStarts) return -1;
+                if (bStarts && !aStarts) return 1;
+                
+                // 对于"AI"搜索，基础AI类型优先
+                if (searchTermLower === 'ai') {
+                    const basicAiTypes = ['ai视觉', 'ai语音', 'ai编程', 'ai智能体'];
+                    const aIsBasic = basicAiTypes.includes(aValue);
+                    const bIsBasic = basicAiTypes.includes(bValue);
+                    
+                    if (aIsBasic && !bIsBasic) return -1;
+                    if (bIsBasic && !aIsBasic) return 1;
+                    
+                    // 如果都是基础类型或都不是基础类型，按AI数量排序
+                    const aAiCount = (a.value.match(/AI/g) || []).length;
+                    const bAiCount = (b.value.match(/AI/g) || []).length;
+                    if (aAiCount !== bAiCount) {
+                        return bAiCount - aAiCount; // AI类型多的优先
+                    }
+                }
+                
+                // 按长度排序，短的优先（更精确）
+                return aValue.length - bValue.length;
+            });
+            
+            console.log('🔍 排序后将选择的选项:', optionsToSelect.map(m => ({
+                value: m.value,
+                label: m.label
+            })));
+            
+            if (matchingOptions.length > 0) {
+                showSearchTip(`找到${matchingOptions.length}个匹配选项，全部自动选择`);
+            }
+            
+            // 如果有匹配的选项，自动选择它们
+            if (optionsToSelect.length > 0) {
+                console.log('🔍 搜索"' + searchTerm + '"找到匹配选项:', optionsToSelect.map(m => ({
+                    value: m.value,
+                    label: m.label
+                })));
+                
+                let hasNewSelection = false;
+                optionsToSelect.forEach(({checkbox, value, option}) => {
+                    console.log('🔧 准备选择选项:', {
+                        value: value,
+                        checkboxBefore: checkbox.checked,
+                        optionClassBefore: option.className
+                    });
+                    
+                    checkbox.checked = true;
+                    selectedAiFilters.add(value);
+                    option.classList.add('selected');
+                    hasNewSelection = true;
+                    
+                    console.log('✅ 自动选择选项完成:', {
+                        value: value,
+                        checkboxAfter: checkbox.checked,
+                        optionClassAfter: option.className,
+                        inSelectedSet: selectedAiFilters.has(value)
+                    });
+                });
+                
+                console.log('🔍 当前所有选中的AI筛选:', Array.from(selectedAiFilters));
+                
+                if (hasNewSelection) {
+                    updateAiFilterDisplay();
+                    filterWorks(); // 触发筛选
+                    
+                    // 在筛选完成后，重新确保选项被正确选中（因为updateFilterCounts可能会影响状态）
+                    setTimeout(() => {
+                        console.log('🔧 重新确保选项选中状态...');
+                        optionsToSelect.forEach(({checkbox, value, option}) => {
+                            if (!checkbox.checked) {
+                                console.log('🔧 重新选中选项:', value);
+                                checkbox.checked = true;
+                                selectedAiFilters.add(value);
+                                option.classList.add('selected');
+                            }
+                        });
+                        updateAiFilterDisplay();
+                        
+                        // 计算选中选项对应的作品数量总和
+                        let totalWorksCount = 0;
+                        selectedAiFilters.forEach(filterValue => {
+                            const worksWithThisAI = allWorks.filter(work => {
+                                const ai = safeToString(work.aiCombined || '').trim();
+                                if (filterValue === '__HAS_AI__') {
+                                    return ai !== '';
+                                } else if (filterValue === '__NO_AI__') {
+                                    return ai === '';
+                                } else {
+                                    return ai.includes(filterValue);
+                                }
+                            }).length;
+                            totalWorksCount += worksWithThisAI;
+                        });
+                        
+                        // 由于可能有重复计算（一个作品可能匹配多个选项），使用实际筛选结果
+                        const actualWorkCount = displayedWorks.length;
+                        
+                        // 显示提示信息 - 显示实际筛选出的作品数量
+                        showSearchTip(`已选择 ${actualWorkCount} 个作品`);
+                        
+                        console.log('📊 统计信息:', {
+                            selectedOptions: selectedAiFilters.size,
+                            actualWorkCount: actualWorkCount,
+                            selectedFilters: Array.from(selectedAiFilters)
+                        });
+                    }, 150); // 给updateFilterCounts足够时间完成
+                }
+            } else {
+                showSearchTip(`未找到包含"${searchTerm}"的选项（需要至少2个字符）`);
+            }
+        }
+        
+        // 显示所有选项
+        function showAllOptions() {
+            const optionsContainer = document.getElementById('aiFilter').querySelector('.multi-select-options');
+            const allOptions = optionsContainer.querySelectorAll('.multi-select-option');
+            
+            allOptions.forEach(option => {
+                option.style.display = 'flex';
+                option.style.backgroundColor = ''; // 移除高亮
+            });
+        }
+        
+        // 显示搜索提示
+        function showSearchTip(message) {
+            const searchContainer = document.querySelector('.multi-select-search');
+            let tipElement = searchContainer.querySelector('.search-tip');
+            
+            if (!tipElement) {
+                tipElement = document.createElement('div');
+                tipElement.className = 'search-tip';
+                tipElement.style.cssText = `
+                    font-size: 12px;
+                    padding: 4px 8px;
+                    margin-top: 4px;
+                    border-radius: 4px;
+                    background: #e6fffa;
+                    color: #234e52;
+                    border: 1px solid #81e6d9;
+                `;
+                searchContainer.appendChild(tipElement);
+            }
+            
+            tipElement.textContent = message;
+            tipElement.style.display = 'block';
+            
+            // 3秒后自动隐藏提示
+            setTimeout(() => {
+                if (tipElement) {
+                    tipElement.style.display = 'none';
+                }
+            }, 3000);
         }
 
         function parseImages(imagesStr) {
@@ -2719,6 +3288,60 @@
             }, 300);
         }
 
+        // 重置所有筛选条件
+        function resetAllFilters() {
+            console.log('🧹 开始重置所有筛选条件');
+            
+            // 1. 重置主搜索框
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // 2. 重置所有下拉筛选器
+            const tagFilter = document.getElementById('tagFilter');
+            const themeFilter = document.getElementById('themeFilter');
+            const locationFilter = document.getElementById('locationFilter');
+            const awardFilter = document.getElementById('awardFilter');
+            const projectSchoolFilter = document.getElementById('projectSchoolFilter');
+            
+            if (tagFilter) tagFilter.value = '';
+            if (themeFilter) themeFilter.value = '';
+            if (locationFilter) locationFilter.value = '';
+            if (awardFilter) awardFilter.value = '';
+            if (projectSchoolFilter) projectSchoolFilter.value = '';
+            
+            // 3. 重置AI筛选器
+            selectedAiFilters.clear();
+            const aiCheckboxes = document.querySelectorAll('#aiFilterOptions input[type="checkbox"]');
+            aiCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const option = checkbox.closest('.filter-option');
+                if (option) {
+                    option.classList.remove('selected');
+                    option.style.display = 'flex'; // 显示所有选项
+                    option.style.backgroundColor = ''; // 移除高亮
+                }
+            });
+            
+            // 4. 重置AI搜索框
+            const aiSearchInput = document.getElementById('aiFilterSearch');
+            if (aiSearchInput) {
+                aiSearchInput.value = '';
+            }
+            
+            // 5. 更新AI筛选显示
+            updateAiFilterDisplay();
+            
+            // 6. 重新应用筛选（这会显示所有作品）
+            filterWorks();
+            
+            // 7. 显示提示信息
+            showSearchTip('已重置所有筛选条件，显示全部作品');
+            
+            console.log('✅ 所有筛选条件已重置');
+        }
+
         // 混元AI总结功能
         const aiSummaryCache = new Map(); // 缓存AI总结结果
         
@@ -2954,14 +3577,13 @@ AI技术结合：${aiCombined}
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const tagFilter = document.getElementById('tagFilter').value;
             const themeFilter = document.getElementById('themeFilter').value;
-            const aiFilter = document.getElementById('aiFilter').value;
             const locationFilter = document.getElementById('locationFilter').value;
             const awardFilter = document.getElementById('awardFilter').value;
             const projectSchoolFilter = document.getElementById('projectSchoolFilter').value;
             
             // 简化日志输出，避免显示Object
-            console.log('🔍 筛选条件 - AI筛选:', aiFilter);
-            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', aiFilter, '地点:', locationFilter, '获奖:', awardFilter, '项目校:', projectSchoolFilter);
+            console.log('🔍 筛选条件 - AI筛选:', Array.from(selectedAiFilters));
+            console.log('搜索条件 - 关键词:', query, '标签:', tagFilter, '主题:', themeFilter, 'AI:', Array.from(selectedAiFilters), '地点:', locationFilter, '获奖:', awardFilter, '项目校:', projectSchoolFilter);
             console.log('总作品数:', allWorks.length);
             
             displayedWorks = allWorks.filter(work => {
@@ -3018,17 +3640,51 @@ AI技术结合：${aiCombined}
                     }
                 }
                 
-                // AI结合过滤
+                // AI结合过滤 - 多选支持
                 let matchAI = true;
-                if (aiFilter) {
+                if (selectedAiFilters.size > 0) {
                     try {
                         const ai = safeToString(work.aiCombined || '').trim();
-                        if (aiFilter === '__HAS_AI__') {
-                            matchAI = ai !== '';
-                        } else if (aiFilter === '__NO_AI__') {
-                            matchAI = ai === '';
-                        } else {
-                            matchAI = safeToString(work.aiCombined) === aiFilter;
+                        matchAI = false; // 默认不匹配，需要满足任一选中条件
+                        
+                        // 添加调试日志
+                        if (work.title && work.title.includes('编程')) {
+                            console.log('🔍 调试AI筛选 - 作品:', work.title, 'AI字段:', `"${ai}"`, '筛选条件:', Array.from(selectedAiFilters));
+                        }
+                        
+                        for (const filterValue of selectedAiFilters) {
+                            if (filterValue === '__HAS_AI__') {
+                                if (ai !== '') {
+                                    matchAI = true;
+                                    if (work.title && work.title.includes('编程')) {
+                                        console.log('✅ 匹配__HAS_AI__');
+                                    }
+                                    break;
+                                }
+                            } else if (filterValue === '__NO_AI__') {
+                                if (ai === '') {
+                                    matchAI = true;
+                                    if (work.title && work.title.includes('编程')) {
+                                        console.log('✅ 匹配__NO_AI__');
+                                    }
+                                    break;
+                                }
+                            } else {
+                                // 对于具体的AI类型，检查作品的AI字段是否包含该类型
+                                // 支持部分匹配，例如"AI编程"可以匹配"AI视觉/AI编程"
+                                // 但AI字段不能为空
+                                if (ai !== '' && ai.includes(filterValue)) {
+                                    matchAI = true;
+                                    if (work.title && work.title.includes('编程')) {
+                                        console.log('✅ 匹配具体AI类型:', filterValue, '作品AI:', `"${ai}"`);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (work.title && work.title.includes('编程')) {
+                            console.log('🔍 最终AI匹配结果:', matchAI);
                         }
                     } catch (error) {
                         console.error('AI过滤出错:', error, work);
@@ -3087,13 +3743,17 @@ AI技术结合：${aiCombined}
             });
             
             console.log('筛选后作品数:', displayedWorks.length);
+            console.log('🔍 筛选后的前10个作品AI字段:', displayedWorks.slice(0, 10).map(w => ({
+                title: w.title,
+                aiCombined: w.aiCombined
+            })));
             
             // 更新筛选器选项数字
             updateFilterCounts();
             
             // 更新搜索状态显示
             const searchStatus = document.getElementById('searchStatus');
-            if (query || tagFilter || themeFilter || aiFilter || locationFilter || awardFilter || projectSchoolFilter) {
+            if (query || tagFilter || themeFilter || selectedAiFilters.size > 0 || locationFilter || awardFilter || projectSchoolFilter) {
                 const totalWorks = allWorks.length;
                 const filteredWorks = displayedWorks.length;
                 searchStatus.textContent = `找到 ${filteredWorks} 个作品（共 ${totalWorks} 个）`;
